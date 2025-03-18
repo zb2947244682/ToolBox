@@ -1,16 +1,16 @@
 <template>
   <div id="app">
-    <MarkdownEditor />
+    <Layout />
   </div>
 </template>
 
 <script>
-import MarkdownEditor from './components/MarkdownEditor.vue';
+import Layout from './components/Layout.vue';
 
 export default {
   name: 'App',
   components: {
-    MarkdownEditor
+    Layout
   }
 };
 </script>

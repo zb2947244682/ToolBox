@@ -1,7 +1,6 @@
 <template>
   <div class="markdown-editor">
     <div class="editor-header">
-      <h1>Markdown编辑器</h1>
       <div class="button-group">
         <button class="btn" @click="clearContent" title="清空编辑器">
           <span>清空</span>

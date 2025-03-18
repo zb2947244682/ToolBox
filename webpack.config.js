@@ -1,6 +1,7 @@
 const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'development',
@@ -31,6 +32,9 @@ module.exports = {
     new VueLoaderPlugin(),
     new HtmlWebpackPlugin({
       template: './public/index.html'
+    }),
+    new webpack.DefinePlugin({
+      'process.env': JSON.stringify(process.env)
     })
   ],
   devServer: {
@@ -40,7 +44,8 @@ module.exports = {
     compress: true,
     port: 8080,
     host: '0.0.0.0',
-    hot: true
+    hot: true,
+    historyApiFallback: true
   },
   resolve: {
     alias: {
