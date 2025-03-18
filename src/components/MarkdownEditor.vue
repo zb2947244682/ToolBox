@@ -53,7 +53,13 @@ function createLatexExtension() {
     name: 'latex',
     level: 'inline',
     start(src) {
-      return src.indexOf('$');
+      const dollarPos = src.indexOf('$');
+      const backslashPos = src.indexOf('\\');
+      if (dollarPos === -1 && backslashPos === -1) return -1;
+      return Math.min(
+        dollarPos !== -1 ? dollarPos : Infinity,
+        backslashPos !== -1 ? backslashPos : Infinity
+      );
     },
     tokenizer(src) {
       // 行内LaTeX: $...$ 
@@ -76,6 +82,30 @@ function createLatexExtension() {
           type: 'latex',
           raw: blockMatch[0],
           text: blockMatch[1].trim(),
+          displayMode: true
+        };
+      }
+      
+      // 行内LaTeX: \(...\)
+      const inlineDelimiterRule = /^\\\((.+?)\\\)/s;
+      const inlineDelimiterMatch = inlineDelimiterRule.exec(src);
+      if (inlineDelimiterMatch) {
+        return {
+          type: 'latex',
+          raw: inlineDelimiterMatch[0],
+          text: inlineDelimiterMatch[1].trim(),
+          displayMode: false
+        };
+      }
+      
+      // 块级LaTeX: \[...\]
+      const blockDelimiterRule = /^\\\[(.+?)\\\]/s;
+      const blockDelimiterMatch = blockDelimiterRule.exec(src);
+      if (blockDelimiterMatch) {
+        return {
+          type: 'latex',
+          raw: blockDelimiterMatch[0],
+          text: blockDelimiterMatch[1].trim(),
           displayMode: true
         };
       }
@@ -140,11 +170,22 @@ export default {
 
 ## LaTeX支持
 
-行内公式: $E = mc^2$
+行内公式（美元符格式）: $E = mc^2$
 
-块级公式:
+行内公式（括号格式）: \\( h_{\mu\nu} \\)
+
+块级公式（美元符格式）:
 
 $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$
+
+块级公式（括号格式）:
+
+\\[ h_{\mu\nu} = 2 \\int \\frac{d^3k}{(2\\pi)^3} e^{i\\vec{k}\\cdot\\vec{x}} \\left[ h_+(\\vec{k}, t) e^+_{\\mu\\nu}(\\vec{k}) + h_\\times(\\vec{k}, t) e^\\times_{\\mu\\nu}(\\vec{k}) \\right] \\]
+
+其他LaTeX示例:
+- \\( h_+ \\) 和 \\( h_\\times \\) 分别表示两种偏振模式（正交和交叉）。
+- \\( e^+_{\\mu\\nu} \\) 和 \\( e^\\times_{\\mu\\nu} \\) 是偏振张量。
+- \\( \\vec{k} \\) 是波矢量，\\( \\vec{x} \\) 是空间坐标。
 
 代码块:
 
@@ -186,10 +227,8 @@ function hello() {
     },
     
     clearContent() {
-      if (confirm('确定要清空编辑器内容吗？')) {
-        this.markdownContent = '';
-        this.updateMarkdown();
-      }
+      this.markdownContent = '';
+      this.updateMarkdown();
     },
     
     copyMarkdown() {
