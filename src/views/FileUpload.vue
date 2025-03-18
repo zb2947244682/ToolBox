@@ -109,9 +109,10 @@
               </div>
             </div>
             <div class="file-url-row">
-              <el-tooltip :content="file.url" placement="top" effect="light">
-                <span class="file-url">{{ file.url }}</span>
-              </el-tooltip>
+              <span class="file-url tooltip-container">
+                {{ file.url }}
+                <span class="tooltip">{{ file.url }}</span>
+              </span>
             </div>
           </div>
         </li>
@@ -133,6 +134,11 @@
           关闭
         </button>
       </div>
+    </div>
+
+    <!-- 消息提示组件 -->
+    <div v-if="message.show" :class="['message-popup', `message-${message.type}`]">
+      <span>{{ message.text }}</span>
     </div>
   </div>
 </template>
@@ -158,7 +164,13 @@ export default {
       files: [],
       uploadedFiles: [],
       uploading: false,
-      client: null
+      client: null,
+      message: {
+        show: false,
+        text: '',
+        type: 'info',
+        timer: null
+      }
     }
   },
   watch: {
@@ -179,16 +191,29 @@ export default {
     }
   },
   methods: {
+    showMessage(text, type = 'info') {
+      // 清除之前的定时器
+      if (this.message.timer) {
+        clearTimeout(this.message.timer)
+      }
+      
+      // 设置新的消息
+      this.message.show = true
+      this.message.text = text
+      this.message.type = type
+      
+      // 3秒后自动关闭
+      this.message.timer = setTimeout(() => {
+        this.message.show = false
+      }, 3000)
+    },
     saveConfig() {
       localStorage.setItem('ossAccessKeyId', this.config.accessKeyId)
       localStorage.setItem('ossAccessKeySecret', this.config.accessKeySecret)
       localStorage.setItem('ossBucket', this.config.bucket)
       localStorage.setItem('ossRegion', this.config.region)
       localStorage.setItem('ossUploadPath', this.uploadPath)
-      this.$message({
-        message: '配置已保存',
-        type: 'success'
-      })
+      this.showMessage('配置已保存', 'success')
       this.showConfig = false
     },
     triggerFileInput() {
@@ -217,10 +242,7 @@ export default {
     },
     async uploadFiles() {
       if (!this.config.accessKeyId || !this.config.accessKeySecret || !this.config.bucket || !this.config.region) {
-        this.$message({
-          message: '请先完成OSS配置',
-          type: 'error'
-        })
+        this.showMessage('请先完成OSS配置', 'error')
         this.showConfig = true
         return
       }
@@ -239,20 +261,14 @@ export default {
         }
         this.files = []
       } catch (error) {
-        this.$message({
-          message: '上传失败：' + error.message,
-          type: 'error'
-        })
+        this.showMessage('上传失败：' + error.message, 'error')
       } finally {
         this.uploading = false
       }
     },
     copyUrl(url) {
       navigator.clipboard.writeText(url).then(() => {
-        this.$message({
-          message: '链接已复制到剪贴板',
-          type: 'success'
-        })
+        this.showMessage('链接已复制到剪贴板', 'success')
       }).catch(() => {
         // 如果剪贴板API不可用，使用传统方法
         const textarea = document.createElement('textarea')
@@ -261,15 +277,9 @@ export default {
         textarea.select()
         try {
           document.execCommand('copy')
-          this.$message({
-            message: '链接已复制到剪贴板',
-            type: 'success'
-          })
+          this.showMessage('链接已复制到剪贴板', 'success')
         } catch (err) {
-          this.$message({
-            message: '复制失败，请手动复制',
-            type: 'error'
-          })
+          this.showMessage('复制失败，请手动复制', 'error')
         }
         document.body.removeChild(textarea)
       })
@@ -296,10 +306,7 @@ export default {
       const allUrls = this.uploadedFiles.map(file => file.url).join('\n');
       
       navigator.clipboard.writeText(allUrls).then(() => {
-        this.$message({
-          message: '所有链接已复制到剪贴板',
-          type: 'success'
-        })
+        this.showMessage('所有链接已复制到剪贴板', 'success')
       }).catch(() => {
         // 如果剪贴板API不可用，使用传统方法
         const textarea = document.createElement('textarea')
@@ -308,15 +315,9 @@ export default {
         textarea.select()
         try {
           document.execCommand('copy')
-          this.$message({
-            message: '所有链接已复制到剪贴板',
-            type: 'success'
-          })
+          this.showMessage('所有链接已复制到剪贴板', 'success')
         } catch (err) {
-          this.$message({
-            message: '复制失败，请手动复制',
-            type: 'error'
-          })
+          this.showMessage('复制失败，请手动复制', 'error')
         }
         document.body.removeChild(textarea)
       })
@@ -640,6 +641,50 @@ button:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
+  position: relative;
+}
+
+/* 自定义tooltip */
+.tooltip-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.tooltip-container .tooltip {
+  visibility: hidden;
+  position: absolute;
+  left: 50%;
+  bottom: 125%;
+  margin-left: -75px;
+  background: white;
+  color: #333;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  width: 300px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: normal;
+  word-break: break-all;
+  border: 1px solid #ebeef5;
+}
+
+.tooltip-container .tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: white transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
 }
 
 .preview-modal {
@@ -736,5 +781,47 @@ button:disabled {
 .file-type {
   font-size: 14px;
   color: #909399;
+}
+
+/* 自定义消息提示样式 */
+.message-popup {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s;
+  min-width: 260px;
+  box-sizing: border-box;
+  border: 1px solid #ebeef5;
+}
+
+.message-success {
+  background-color: #f0f9eb;
+  border-color: #e1f3d8;
+  color: #67c23a;
+}
+
+.message-info {
+  background-color: #f4f4f5;
+  border-color: #e9e9eb;
+  color: #909399;
+}
+
+.message-warning {
+  background-color: #fdf6ec;
+  border-color: #faecd8;
+  color: #e6a23c;
+}
+
+.message-error {
+  background-color: #fef0f0;
+  border-color: #fde2e2;
+  color: #f56c6c;
 }
 </style> 
