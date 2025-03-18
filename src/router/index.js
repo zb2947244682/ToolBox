@@ -1,7 +1,6 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Home from '../views/Home.vue';
-import MarkdownEditor from '../components/MarkdownEditor.vue';
 
 Vue.use(VueRouter);
 
@@ -14,7 +13,7 @@ const routes = [
   {
     path: '/markdown-editor',
     name: 'MarkdownEditor',
-    component: MarkdownEditor
+    component: () => import('../views/MarkdownEditor.vue')
   },
   {
     path: '/js-formatter',
@@ -39,7 +38,7 @@ const routes = [
   {
     path: '/file-upload',
     name: 'FileUpload',
-    component: () => import('../components/FileUpload.vue')
+    component: () => import('../views/FileUpload.vue')
   }
 ];
 
