@@ -21,23 +21,23 @@
         <div class="config-panel">
           <div class="form-group">
             <label>AccessKey ID:</label>
-            <input v-model="config.accessKeyId" type="text" placeholder="请输入AccessKey ID">
+            <input v-model="config.accessKeyId" type="text" placeholder="请输入AccessKey ID" autocomplete="off">
           </div>
           <div class="form-group">
             <label>AccessKey Secret:</label>
-            <input v-model="config.accessKeySecret" type="password" placeholder="请输入AccessKey Secret">
+            <input v-model="config.accessKeySecret" type="password" placeholder="请输入AccessKey Secret" autocomplete="off">
           </div>
           <div class="form-group">
             <label>Bucket:</label>
-            <input v-model="config.bucket" type="text" placeholder="请输入Bucket名称">
+            <input v-model="config.bucket" type="text" placeholder="请输入Bucket名称" autocomplete="off">
           </div>
           <div class="form-group">
             <label>Region:</label>
-            <input v-model="config.region" type="text" placeholder="例如: oss-cn-shanghai">
+            <input v-model="config.region" type="text" placeholder="例如: oss-cn-shanghai" autocomplete="off">
           </div>
           <div class="form-group">
             <label>上传路径:</label>
-            <input v-model="uploadPath" type="text" placeholder="例如: /images">
+            <input v-model="uploadPath" type="text" placeholder="例如: /images" autocomplete="off">
           </div>
           <div class="modal-footer">
             <button @click="showConfig = false" class="cancel-btn">取消</button>
