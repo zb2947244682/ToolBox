@@ -1,9 +1,10 @@
-# Markdown编辑器
+# ToolBox 开发工具箱
 
-一个基于Vue2的简洁、功能强大的Markdown编辑器，支持实时预览和LaTeX数学公式渲染。
+一个基于Vue2的多功能开发工具集合，包含Markdown编辑器、代码格式化工具、文件上传等组件。
 
 ## 📚 功能特点
 
+### 📝 Markdown编辑器
 - 💻 **实时预览**：一边编辑，一边查看渲染效果
 - 📝 **完整的Markdown支持**：支持标题、列表、引用、链接、代码块等Markdown语法
 - 🧮 **强大的LaTeX数学公式支持**：
@@ -17,6 +18,18 @@
 - 💾 **自动保存**：每10秒自动保存内容到本地存储
 - 🧹 **一键清空**：快速清除编辑器内容
 - 🔄 **滚动同步**：编辑区和预览区滚动位置同步，提升阅读体验
+
+### 🧰 代码格式化工具
+- **JavaScript格式化器**：美化和格式化JavaScript代码
+- **HTML格式化器**：整理HTML代码结构和缩进
+- **CSS格式化器**：优化CSS代码格式
+- **JSON格式化器**：格式化JSON数据，提高可读性
+
+### 📤 文件上传功能
+- **图片压缩**：上传前自动压缩图片，提高传输速度
+- **阿里云OSS支持**：集成阿里云对象存储服务
+- **上传进度显示**：实时显示文件上传进度
+- **多文件上传**：支持批量文件上传
 
 ## 🚀 快速开始
 
@@ -34,6 +47,8 @@ npm install
 npm run dev
 ```
 
+访问 http://localhost:8080 查看应用。
+
 #### 构建生产版本
 
 ```bash
@@ -44,7 +59,7 @@ npm run build
 
 本项目已添加Docker支持，您可以通过以下步骤快速部署：
 
-#### 使用 Docker Compose（推荐）
+#### 使用 Docker Compose
 
 ```bash
 # 构建并启动容器
@@ -57,28 +72,20 @@ docker-compose up -d
 docker-compose down
 ```
 
-#### 手动构建和运行 Docker 镜像
-
-```bash
-# 构建镜像
-docker build -t markdown-editor .
-
-# 运行容器
-docker run -p 8080:8080 -d markdown-editor
-```
-
 应用将在 http://localhost:8080 上运行。
 
 ## 💡 使用示例
 
+### Markdown编辑器
+
 这个编辑器支持多种格式的LaTeX公式输入：
 
-### 行内公式
+#### 行内公式
 
 - 美元符格式: `$E = mc^2$`
 - 括号格式: `\( h_{\mu\nu} \)`
 
-### 块级公式
+#### 块级公式
 
 - 美元符格式:
 ```
@@ -90,12 +97,23 @@ $$\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$$
 \[ h_{\mu\nu} = 2 \int \frac{d^3k}{(2\pi)^3} e^{i\vec{k}\cdot\vec{x}} \left[ h_+(\vec{k}, t) e^+_{\mu\nu}(\vec{k}) + h_\times(\vec{k}, t) e^\times_{\mu\nu}(\vec{k}) \right] \]
 ```
 
+### 代码格式化
+
+在相应的格式化工具中粘贴代码，点击"格式化"按钮即可获得格式化后的代码。每种格式化工具都提供了复制和清空功能。
+
+### 文件上传
+
+在文件上传页面，可以选择文件并上传至OSS存储，支持图片压缩、拖拽上传和批量处理。
+
 ## 🔧 技术栈
 
 - Vue 2.7
+- Vue Router 3.6
 - Marked (Markdown解析)
 - KaTeX (LaTeX渲染)
-- Webpack (打包工具)
+- Ali-OSS (阿里云对象存储SDK)
+- Webpack 5 (打包工具)
+- Docker (容器化部署)
 
 ## 📄 许可证
 
