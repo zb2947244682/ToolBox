@@ -59,6 +59,38 @@ npm run build
 
 本项目已添加Docker支持，您可以通过以下步骤快速部署：
 
+#### 配置Docker镜像加速
+
+由于Docker Hub访问可能较慢，建议配置以下镜像加速器：
+
+Windows/Mac: 在Docker Desktop设置中的"Docker Engine"选项卡添加以下配置：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.zhai.cm",
+    "https://a.ussh.net",
+    "https://hub.littlediary.cn",
+    "https://hub.rat.dev",
+    "https://atomhub.openatom.cn",
+    "https://docker.m.daocloud.io",
+    "https://docker.1ms.run",
+    "https://dytt.online",
+    "https://func.ink",
+    "https://lispy.org",
+    "https://docker.xiaogenban1993.com",
+    "https://docker.mybacc.com",
+    "https://docker.yomansunter.com",
+    "https://dockerhub.websoft9.com"
+  ]
+}
+```
+
+Linux: 编辑 `/etc/docker/daemon.json` 文件，添加上述配置，然后重启Docker服务：
+```bash
+sudo systemctl restart docker
+```
+
 #### 使用 Docker Compose
 
 ```bash
