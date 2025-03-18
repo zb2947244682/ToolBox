@@ -218,79 +218,126 @@ export default {
     
     formatHTML(code) {
       try {
-        // 简化的HTML格式化，修复缩进问题
-        const indentSize = 2;
+        // 完全按照预期格式处理HTML
+        // 准备工作，清理输入代码
+        let html = code.trim();
         
-        // 预处理HTML，删除多余的空白
-        let html = code.trim()
-          .replace(/>\s+</g, '><')
-          .replace(/\s{2,}/g, ' ');
-        
-        // 自闭合标签列表
+        // 定义一些标签分类
         const selfClosingTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+        const inlineTextContainers = ['title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'button', 'a', 'label', 'span', 'strong', 'em', 'i', 'b', 'small', 'td', 'th', 'li'];
         
-        // 使用更简单的方法处理HTML
-        let formatted = '';
+        // 第一步：使用正则表达式分解HTML为标签和文本
+        // 这个正则会捕获：开始标签、结束标签、自闭合标签和文本内容
+        const tokenRegex = /<\/?[^>]+>|[^<]+/g;
+        const tokens = html.match(tokenRegex) || [];
+        
+        // 处理结果和计数器
+        let result = '';
         let indentLevel = 0;
-        let pos = 0;
+        let lastTokenWasText = false;
+        let lastTokenWasTag = false;
+        let parentTagStack = [];
         
-        while (pos < html.length) {
-          // 查找标签开始位置
-          let tagStart = html.indexOf('<', pos);
+        // 第二步：遍历所有令牌并应用正确的格式
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i].trim();
+          if (!token) continue;
           
-          // 如果没有找到标签，处理剩余文本
-          if (tagStart === -1) {
-            let remainingText = html.substring(pos).trim();
-            if (remainingText) {
-              formatted += ' '.repeat(indentLevel * indentSize) + remainingText + '\n';
+          // 跳过注释
+          if (token.startsWith('<!--') && token.endsWith('-->')) continue;
+          
+          // 处理标签
+          if (token.startsWith('<')) {
+            const isClosingTag = token.startsWith('</');
+            const isSelfClosing = token.endsWith('/>') || selfClosingTags.some(tag => 
+              new RegExp(`^<${tag}(\\s|>|/>)`, 'i').test(token)
+            );
+            
+            // 提取标签名
+            const tagNameMatch = token.match(isClosingTag ? /<\/([^\s>]+)/ : /<([^\s>]+)/);
+            const tagName = tagNameMatch ? tagNameMatch[1].toLowerCase() : '';
+            
+            // 特殊处理doctype，不增加缩进
+            if (tagName === '!doctype') {
+              result += token + '\n';
+              continue;
             }
-            break;
-          }
-          
-          // 处理标签前的文本
-          if (tagStart > pos) {
-            let text = html.substring(pos, tagStart).trim();
-            if (text) {
-              formatted += ' '.repeat(indentLevel * indentSize) + text + '\n';
+            
+            // 处理闭合标签
+            if (isClosingTag) {
+              // 减少缩进级别
+              indentLevel = Math.max(0, indentLevel - 1);
+              
+              // 从栈中移除最后一个标签
+              if (parentTagStack.length > 0) {
+                parentTagStack.pop();
+              }
+              
+              // 添加闭合标签（除非前一个是内联元素文本）
+              if (!lastTokenWasText || !inlineTextContainers.includes(tagName)) {
+                result += ' '.repeat(indentLevel * 2) + token + '\n';
+              } else {
+                // 如果前一个是内联元素文本，则直接附加
+                result += token + '\n';
+              }
             }
+            // 处理开始或自闭合标签
+            else {
+              // 添加标签，带缩进
+              result += ' '.repeat(indentLevel * 2) + token;
+              
+              // 如果不是自闭合，增加缩进级别和父标签栈
+              if (!isSelfClosing) {
+                // 检查此标签是否包含文本内容
+                const nextToken = i + 1 < tokens.length ? tokens[i + 1].trim() : '';
+                const nextNextToken = i + 2 < tokens.length ? tokens[i + 2].trim() : '';
+                
+                // 检查是否为内联文本容器且下一个是文本且下下个是闭合标签
+                const hasInlineTextContent = inlineTextContainers.includes(tagName) && 
+                                            nextToken && !nextToken.startsWith('<') &&
+                                            nextNextToken && nextNextToken === `</${tagName}>`;
+                
+                // 如果有内联文本内容，不换行
+                if (hasInlineTextContent) {
+                  result += '';
+                } else {
+                  result += '\n';
+                }
+                
+                indentLevel++;
+                parentTagStack.push(tagName);
+              } else {
+                // 自闭合标签后换行
+                result += '\n';
+              }
+            }
+            
+            lastTokenWasTag = true;
+            lastTokenWasText = false;
           }
-          
-          // 查找标签结束位置
-          let tagEnd = html.indexOf('>', tagStart);
-          if (tagEnd === -1) break;
-          
-          // 获取完整标签
-          let tag = html.substring(tagStart, tagEnd + 1);
-          
-          // 判断标签类型
-          let isClosingTag = html.charAt(tagStart + 1) === '/';
-          let tagNameMatch = isClosingTag ? 
-            tag.match(/<\/([a-zA-Z0-9]+)/) : 
-            tag.match(/<([a-zA-Z0-9]+)/);
-          
-          let tagName = tagNameMatch ? tagNameMatch[1].toLowerCase() : '';
-          let isSelfClosing = tag.endsWith('/>') || selfClosingTags.includes(tagName);
-          
-          // 调整缩进
-          if (isClosingTag) {
-            indentLevel = Math.max(0, indentLevel - 1);
+          // 处理文本内容
+          else {
+            const text = token.replace(/\s+/g, ' ').trim();
+            if (!text) continue;
+            
+            // 检查父标签是否是内联文本容器
+            const parentTag = parentTagStack.length > 0 ? parentTagStack[parentTagStack.length - 1] : '';
+            const isInInlineContainer = inlineTextContainers.includes(parentTag);
+            
+            // 添加文本内容，如果在内联容器中则不缩进
+            if (isInInlineContainer) {
+              result += text;
+            } else {
+              result += ' '.repeat(indentLevel * 2) + text + '\n';
+            }
+            
+            lastTokenWasText = true;
+            lastTokenWasTag = false;
           }
-          
-          // 添加带缩进的标签
-          formatted += ' '.repeat(indentLevel * indentSize) + tag + '\n';
-          
-          // 如果是开始标签且不是自闭合标签，增加缩进
-          if (!isClosingTag && !isSelfClosing) {
-            indentLevel++;
-          }
-          
-          // 移动到标签之后
-          pos = tagEnd + 1;
         }
         
-        // 删除多余的空行
-        let lines = formatted.split('\n').filter(line => line.trim());
-        return lines.join('\n');
+        // 最后清理多余的换行和空格
+        return result.trim();
       } catch(error) {
         console.error('HTML格式化失败:', error);
         return code.trim();
