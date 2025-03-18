@@ -5,7 +5,7 @@
     <!-- 设置按钮 -->
     <div class="settings-button-container">
       <button @click="showConfig = true" class="settings-btn">
-        <i class="fas fa-cog"></i> OSS配置
+        OSS配置
       </button>
     </div>
 
@@ -15,7 +15,7 @@
         <div class="config-modal-header">
           <h2>OSS配置</h2>
           <button @click="showConfig = false" class="close-btn">
-            <i class="fas fa-times"></i>
+            关闭
           </button>
         </div>
         <div class="config-panel">
@@ -49,7 +49,6 @@
 
     <div class="upload-area" @drop.prevent="handleDrop" @dragover.prevent>
       <div class="drop-zone" @click="triggerFileInput">
-        <i class="fas fa-cloud-upload-alt"></i>
         <p>拖拽文件到此处或点击上传</p>
         <input
           type="file"
@@ -68,16 +67,16 @@
           <span class="file-name">{{ file.name }}</span>
           <span class="file-size">{{ formatFileSize(file.size) }}</span>
           <button @click="removeFile(index)" class="remove-btn">
-            <i class="fas fa-times"></i>
+            删除
           </button>
         </li>
       </ul>
       <div class="action-buttons">
         <button @click="clearFiles" class="clear-btn">
-          <i class="fas fa-trash-alt"></i> 清空列表
+          清空列表
         </button>
         <button @click="uploadFiles" class="upload-btn" :disabled="uploading">
-          <i class="fas fa-upload"></i> {{ uploading ? '上传中...' : '开始上传' }}
+          {{ uploading ? '上传中...' : '开始上传' }}
         </button>
       </div>
     </div>
@@ -93,7 +92,7 @@
               <img :src="file.url" class="preview-thumbnail" :alt="file.name">
             </template>
             <template v-else>
-              <i :class="getFileIcon(file.name)" class="file-icon"></i>
+              <span class="file-type">文件</span>
             </template>
           </div>
           
@@ -102,10 +101,10 @@
               <span class="file-name">{{ file.name }}</span>
               <div class="action-btns">
                 <button class="action-btn copy-btn" @click="copyUrl(file.url)" title="复制链接">
-                  <i class="fas fa-copy"></i>
+                  复制
                 </button>
                 <button class="action-btn preview-btn" @click="openUrl(file.url)" title="预览文件">
-                  <i class="fas fa-external-link-alt"></i>
+                  预览
                 </button>
               </div>
             </div>
@@ -117,6 +116,13 @@
           </div>
         </li>
       </ul>
+      
+      <!-- 添加复制所有链接按钮 -->
+      <div class="action-buttons">
+        <button @click="copyAllUrls" class="copy-all-btn">
+          复制所有链接
+        </button>
+      </div>
     </div>
 
     <!-- 图片预览弹窗 -->
@@ -124,7 +130,7 @@
       <div class="preview-content">
         <img :src="currentPreviewFile.url" :alt="currentPreviewFile.name">
         <button class="close-preview-btn" @click.stop="showPreview = false">
-          <i class="fas fa-times"></i>
+          关闭
         </button>
       </div>
     </div>
@@ -231,10 +237,6 @@ export default {
             url: result.url
           })
         }
-        this.$message({
-          message: '所有文件上传成功',
-          type: 'success'
-        })
         this.files = []
       } catch (error) {
         this.$message({
@@ -279,46 +281,6 @@ export default {
       const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
       return imageExtensions.some(ext => filename.toLowerCase().endsWith(ext))
     },
-    getFileIcon(filename) {
-      const extension = filename.toLowerCase().split('.').pop()
-      const iconMap = {
-        // 图片
-        jpg: 'fas fa-image',
-        jpeg: 'fas fa-image',
-        png: 'fas fa-image',
-        gif: 'fas fa-image',
-        bmp: 'fas fa-image',
-        webp: 'fas fa-image',
-        // 文档
-        pdf: 'fas fa-file-pdf',
-        doc: 'fas fa-file-word',
-        docx: 'fas fa-file-word',
-        txt: 'fas fa-file-alt',
-        // 表格
-        xls: 'fas fa-file-excel',
-        xlsx: 'fas fa-file-excel',
-        // 演示
-        ppt: 'fas fa-file-powerpoint',
-        pptx: 'fas fa-file-powerpoint',
-        // 压缩包
-        zip: 'fas fa-file-archive',
-        rar: 'fas fa-file-archive',
-        '7z': 'fas fa-file-archive',
-        // 音频
-        mp3: 'fas fa-file-audio',
-        wav: 'fas fa-file-audio',
-        // 视频
-        mp4: 'fas fa-file-video',
-        avi: 'fas fa-file-video',
-        mov: 'fas fa-file-video',
-        // 代码
-        js: 'fab fa-js',
-        css: 'fab fa-css3',
-        html: 'fab fa-html5',
-      }
-      
-      return iconMap[extension] || 'fas fa-file'
-    },
     previewFile(file) {
       if (this.isImageFile(file.name)) {
         this.currentPreviewFile = file
@@ -326,6 +288,38 @@ export default {
       } else {
         this.openUrl(file.url)
       }
+    },
+    // 复制所有URL
+    copyAllUrls() {
+      if (this.uploadedFiles.length === 0) return;
+      
+      const allUrls = this.uploadedFiles.map(file => file.url).join('\n');
+      
+      navigator.clipboard.writeText(allUrls).then(() => {
+        this.$message({
+          message: '所有链接已复制到剪贴板',
+          type: 'success'
+        })
+      }).catch(() => {
+        // 如果剪贴板API不可用，使用传统方法
+        const textarea = document.createElement('textarea')
+        textarea.value = allUrls
+        document.body.appendChild(textarea)
+        textarea.select()
+        try {
+          document.execCommand('copy')
+          this.$message({
+            message: '所有链接已复制到剪贴板',
+            type: 'success'
+          })
+        } catch (err) {
+          this.$message({
+            message: '复制失败，请手动复制',
+            type: 'error'
+          })
+        }
+        document.body.removeChild(textarea)
+      })
     },
   }
 }
@@ -699,5 +693,48 @@ button:disabled {
 
 .close-preview-btn:hover {
   background: rgba(0, 0, 0, 0.7);
+}
+
+.copy-all-btn {
+  background: #409eff;
+  color: white;
+  margin-top: 15px;
+  width: 100%;
+  justify-content: center;
+}
+
+.copy-all-btn:hover {
+  background: #66b1ff;
+}
+
+.standalone-copy-btn {
+  background: #409eff;
+  color: white;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  height: 36px;
+  width: 72px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.standalone-copy-btn:hover {
+  background: #66b1ff;
+  transform: scale(1.05);
+}
+
+.standalone-copy-btn i {
+  font-size: 16px;
+}
+
+.file-type {
+  font-size: 14px;
+  color: #909399;
 }
 </style> 
