@@ -19,20 +19,21 @@
     </div>
     
     <div class="editor-container">
-      <div class="editor-section">
+      <div class="editor-section" ref="editorSection">
         <textarea 
           ref="markdownInput"
           v-model="markdownContent" 
           class="markdown-input" 
           placeholder="请输入Markdown内容..."
           @input="updateMarkdown"
+          @scroll="syncScroll('editor')"
         ></textarea>
         <div class="editor-statusbar">
           <span>{{ lineCount }}行</span>
           <span>{{ charCount }}字符</span>
         </div>
       </div>
-      <div class="preview-section">
+      <div class="preview-section" ref="previewSection" @scroll="syncScroll('preview')">
         <div class="preview-content" v-html="renderedContent"></div>
       </div>
     </div>
@@ -138,7 +139,10 @@ export default {
       markdownContent: '',
       renderedContent: '',
       copyMessage: '',
-      autoSaveInterval: null
+      autoSaveInterval: null,
+      scrollSyncLock: false, // 防止无限循环滚动的锁
+      scrollTimeout: null,   // 滚动防抖
+      lastScrollPosition: 0  // 上次滚动位置
     };
   },
   computed: {
@@ -201,6 +205,22 @@ function hello() {
     
     this.updateMarkdown();
     
+    // 确保初始滚动到顶部
+    this.$nextTick(() => {
+      this.lastScrollPosition = 0;
+      
+      if (this.$refs.markdownInput) {
+        this.$refs.markdownInput.scrollTop = 0;
+      }
+      
+      if (this.$refs.previewSection) {
+        this.$refs.previewSection.scrollTop = 0;
+      }
+      
+      // 初始化后释放滚动锁
+      this.scrollSyncLock = false;
+    });
+    
     // 设置自动保存
     this.autoSaveInterval = setInterval(this.saveToLocalStorage, 10000); // 每10秒保存一次
   },
@@ -213,9 +233,46 @@ function hello() {
   methods: {
     updateMarkdown() {
       try {
+        // 保存当前的滚动位置
+        const editorTextarea = this.$refs.markdownInput;
+        let scrollPercentage = 0;
+        
+        if (editorTextarea) {
+          const scrollHeight = editorTextarea.scrollHeight - editorTextarea.clientHeight;
+          if (scrollHeight > 0) {
+            scrollPercentage = editorTextarea.scrollTop / scrollHeight;
+          }
+        }
+        
         this.renderedContent = marked.parse(this.markdownContent);
+        
         // 每次更新内容都保存
         this.saveToLocalStorage();
+        
+        // 在DOM更新后恢复滚动位置
+        this.$nextTick(() => {
+          if (editorTextarea) {
+            const maxScroll = editorTextarea.scrollHeight - editorTextarea.clientHeight;
+            if (maxScroll > 0) {
+              // 清除锁状态，允许恢复滚动
+              this.scrollSyncLock = false;
+              
+              // 设置滚动位置
+              this.lastScrollPosition = scrollPercentage * maxScroll;
+              editorTextarea.scrollTop = this.lastScrollPosition;
+              
+              // 使用防抖来同步滚动，减少渲染压力
+              if (this.scrollTimeout) {
+                clearTimeout(this.scrollTimeout);
+              }
+              
+              this.scrollTimeout = setTimeout(() => {
+                // 确保编辑区和预览区的比例一致
+                this.syncScroll('editor');
+              }, 50);
+            }
+          }
+        });
       } catch (e) {
         console.error('Markdown渲染错误:', e);
         this.renderedContent = '<div class="error">渲染错误</div>';
@@ -268,6 +325,81 @@ function hello() {
             this.copyMessage = '';
           }, 3000);
         });
+    },
+    
+    syncScroll(source) {
+      // 如果锁定状态，不执行同步
+      if (this.scrollSyncLock) return;
+      
+      // 清除之前的定时器，实现防抖
+      if (this.scrollTimeout) {
+        clearTimeout(this.scrollTimeout);
+      }
+      
+      // 使用requestAnimationFrame确保平滑滚动
+      requestAnimationFrame(() => {
+        // 设置锁，防止无限循环滚动
+        this.scrollSyncLock = true;
+        
+        const editorElement = this.$refs.editorSection;
+        const previewElement = this.$refs.previewSection;
+        
+        if (!editorElement || !previewElement) {
+          this.scrollSyncLock = false;
+          return;
+        }
+        
+        // 获取当前滚动百分比
+        let scrollPercentage;
+        
+        if (source === 'editor') {
+          // 当从编辑区滚动触发时
+          const editorTextarea = this.$refs.markdownInput;
+          
+          // 检查是否真的发生了滚动
+          if (Math.abs(editorTextarea.scrollTop - this.lastScrollPosition) < 5) {
+            this.scrollSyncLock = false;
+            return;
+          }
+          
+          this.lastScrollPosition = editorTextarea.scrollTop;
+          
+          // 计算滚动百分比，添加边界检查
+          const editorScrollHeight = editorTextarea.scrollHeight - editorTextarea.clientHeight;
+          scrollPercentage = editorScrollHeight <= 0 ? 0 : editorTextarea.scrollTop / editorScrollHeight;
+          
+          // 应用相同比例到预览区
+          const maxScroll = previewElement.scrollHeight - previewElement.clientHeight;
+          if (maxScroll > 0) {
+            previewElement.scrollTop = scrollPercentage * maxScroll;
+          }
+        } else if (source === 'preview') {
+          // 当从预览区滚动触发时
+          // 检查是否真的发生了滚动
+          if (Math.abs(previewElement.scrollTop - this.lastScrollPosition) < 5) {
+            this.scrollSyncLock = false;
+            return;
+          }
+          
+          this.lastScrollPosition = previewElement.scrollTop;
+          
+          // 计算滚动百分比，添加边界检查
+          const previewScrollHeight = previewElement.scrollHeight - previewElement.clientHeight;
+          scrollPercentage = previewScrollHeight <= 0 ? 0 : previewElement.scrollTop / previewScrollHeight;
+          
+          // 应用相同比例到编辑区
+          const editorTextarea = this.$refs.markdownInput;
+          const maxScroll = editorTextarea.scrollHeight - editorTextarea.clientHeight;
+          if (maxScroll > 0) {
+            editorTextarea.scrollTop = scrollPercentage * maxScroll;
+          }
+        }
+        
+        // 使用定时器延迟解锁，合理的时间以减少卡顿感
+        this.scrollTimeout = setTimeout(() => {
+          this.scrollSyncLock = false;
+        }, 100);
+      });
     }
   }
 };
