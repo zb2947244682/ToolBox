@@ -32,7 +32,8 @@ export default {
         { name: 'JavaScript格式化', path: '/js-formatter' },
         { name: 'HTML格式化', path: '/html-formatter' },
         { name: 'CSS格式化', path: '/css-formatter' },
-        { name: 'JSON格式化', path: '/json-formatter' }
+        { name: 'JSON格式化', path: '/json-formatter' },
+        { name: 'OSS上传', path: '/file-upload' }
       ]
     };
   }

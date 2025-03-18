@@ -35,6 +35,11 @@ const routes = [
     path: '/json-formatter',
     name: 'JSONFormatter',
     component: () => import('../views/JSONFormatter.vue')
+  },
+  {
+    path: '/file-upload',
+    name: 'FileUpload',
+    component: () => import('../components/FileUpload.vue')
   }
 ];
 

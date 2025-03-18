@@ -47,6 +47,11 @@ export default {
           name: 'JSON格式化', 
           path: '/json-formatter',
           description: '格式化JSON数据，使其结构清晰易读'
+        },
+        {
+          name: 'OSS上传',
+          path: '/file-upload',
+          description: '支持拖拽上传文件到阿里云OSS，可配置存储参数'
         }
       ]
     };
