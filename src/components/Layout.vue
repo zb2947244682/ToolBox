@@ -8,6 +8,7 @@
           :key="tool.path" 
           :to="tool.path" 
           class="tab"
+          :exact="tool.path === '/'"
           active-class="active"
         >
           {{ tool.name }}
@@ -28,10 +29,10 @@ export default {
       tools: [
         { name: '首页', path: '/' },
         { name: 'Markdown编辑器', path: '/markdown-editor' },
-        { name: '代码格式化', path: '/code-formatter' },
-        { name: '图片压缩', path: '/image-compressor' },
-        { name: '计算器', path: '/calculator' },
-        { name: '单位转换', path: '/unit-converter' }
+        { name: 'JavaScript格式化', path: '/js-formatter' },
+        { name: 'HTML格式化', path: '/html-formatter' },
+        { name: 'CSS格式化', path: '/css-formatter' },
+        { name: 'JSON格式化', path: '/json-formatter' }
       ]
     };
   }

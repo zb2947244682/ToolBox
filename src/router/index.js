@@ -17,9 +17,24 @@ const routes = [
     component: MarkdownEditor
   },
   {
-    path: '/code-formatter',
-    name: 'CodeFormatter',
-    component: () => import('../views/CodeFormatter.vue')
+    path: '/js-formatter',
+    name: 'JavaScriptFormatter',
+    component: () => import('../views/JavaScriptFormatter.vue')
+  },
+  {
+    path: '/html-formatter',
+    name: 'HTMLFormatter',
+    component: () => import('../views/HTMLFormatter.vue')
+  },
+  {
+    path: '/css-formatter',
+    name: 'CSSFormatter',
+    component: () => import('../views/CSSFormatter.vue')
+  },
+  {
+    path: '/json-formatter',
+    name: 'JSONFormatter',
+    component: () => import('../views/JSONFormatter.vue')
   }
 ];
 

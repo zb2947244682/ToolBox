@@ -29,9 +29,24 @@ export default {
           description: '支持实时预览的Markdown编辑器，可编辑和渲染各种Markdown格式，包括数学公式'
         },
         { 
-          name: '代码格式化', 
-          path: '/code-formatter',
-          description: '格式化各种编程语言的代码，使其更加规范和易读'
+          name: 'JavaScript格式化', 
+          path: '/js-formatter',
+          description: '格式化JavaScript代码，使其更加规范和易读'
+        },
+        { 
+          name: 'HTML格式化', 
+          path: '/html-formatter',
+          description: '格式化HTML代码，优化标签缩进和结构'
+        },
+        { 
+          name: 'CSS格式化', 
+          path: '/css-formatter',
+          description: '格式化CSS代码，优化样式规则的排版'
+        },
+        { 
+          name: 'JSON格式化', 
+          path: '/json-formatter',
+          description: '格式化JSON数据，使其结构清晰易读'
         }
       ]
     };

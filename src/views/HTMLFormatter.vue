@@ -1,24 +1,13 @@
 <template>
   <div class="code-formatter">
-    <h1 class="tool-title">代码格式化工具</h1>
+    <h1 class="tool-title">HTML代码格式化</h1>
     
     <div class="formatter-container">
-      <div class="options">
-        <div class="option-group">
-          <label>选择语言：</label>
-          <select v-model="language">
-            <option value="javascript">JavaScript</option>
-            <option value="html">HTML</option>
-            <option value="css">CSS</option>
-          </select>
-        </div>
-      </div>
-      
       <div class="editor-wrapper">
         <div class="editor">
           <textarea 
             v-model="inputCode" 
-            placeholder="请输入需要格式化的代码..."
+            placeholder="请输入需要格式化的HTML代码..."
             @input="updateWordCount"
           ></textarea>
           <div class="editor-statusbar">
@@ -51,12 +40,11 @@
 
 <script>
 export default {
-  name: 'CodeFormatter',
+  name: 'HTMLFormatter',
   data() {
     return {
       inputCode: '',
       outputCode: '',
-      language: 'javascript',
       copyMessage: '',
       lineCount: 0,
       charCount: 0
@@ -70,157 +58,9 @@ export default {
       }
       
       try {
-        let formattedCode = '';
-        
-        // 针对不同语言使用不同处理逻辑
-        if (this.language === 'javascript') {
-          formattedCode = this.formatJavaScript(this.inputCode);
-        }
-        else if (this.language === 'html') {
-          formattedCode = this.formatHTML(this.inputCode);
-        }
-        else if (this.language === 'css') {
-          formattedCode = this.formatCSS(this.inputCode);
-        }
-        
-        this.outputCode = formattedCode;
-      } catch (error) {
-        console.error('格式化错误:', error);
-        this.showCopyMessage('格式化失败：' + error.message);
-        this.outputCode = '格式化失败: ' + error.message;
-      }
-    },
-    
-    formatJavaScript(code) {
-      try {
-        // 检查JavaScript语法
-        new Function(code);
-        
-        // 使用更严格的JavaScript代码美化逻辑
-        // 1. 先移除所有多余的空格和空行
-        let cleanCode = code.replace(/\s+/g, ' ').trim();
-        
-        // 2. 逐步添加适当的缩进和换行
-        let result = '';
-        let indentLevel = 0;
-        let inString = false;
-        let inComment = false;
-        let inRegex = false;
-        let stringChar = '';
-        let lastChar = '';
-        let nextChar = '';
-        
-        for (let i = 0; i < cleanCode.length; i++) {
-          let char = cleanCode[i];
-          nextChar = i < cleanCode.length - 1 ? cleanCode[i + 1] : '';
-          
-          // 处理字符串
-          if ((char === '"' || char === "'" || char === '`') && lastChar !== '\\' && !inComment && !inRegex) {
-            if (inString && stringChar === char) {
-              inString = false;
-            } else if (!inString) {
-              inString = true;
-              stringChar = char;
-            }
-            result += char;
-            lastChar = char;
-            continue;
-          }
-          
-          // 如果在字符串内，直接添加字符
-          if (inString) {
-            result += char;
-            lastChar = char;
-            continue;
-          }
-          
-          // 处理括号和缩进
-          switch (char) {
-            case '{':
-              result += ' {';
-              if (nextChar !== '}') { // 避免{}的情况缩进
-                result += '\n' + ' '.repeat(2 * (indentLevel + 1));
-                indentLevel++;
-              }
-              break;
-              
-            case '}':
-              if (result.trim().endsWith('\n')) {
-                result = result.trimEnd();
-              } else {
-                indentLevel--;
-                result = result.trimEnd() + '\n' + ' '.repeat(2 * indentLevel);
-              }
-              result += '}';
-              
-              // 如果后面不是分号或逗号或闭括号，添加换行
-              if (nextChar !== ';' && nextChar !== ',' && nextChar !== ')') {
-                result += '\n' + ' '.repeat(2 * indentLevel);
-              }
-              break;
-              
-            case ';':
-              result += ';';
-              // 如果后面不是闭合的圆括号或方括号，添加换行
-              if (nextChar !== ')' && nextChar !== ']') {
-                result += '\n' + ' '.repeat(2 * indentLevel);
-              }
-              break;
-              
-            case ',':
-              result += ', ';
-              // 在对象或数组中的逗号后换行
-              if (indentLevel > 0 && (cleanCode.includes('{') || cleanCode.includes('['))) {
-                result += '\n' + ' '.repeat(2 * indentLevel);
-              }
-              break;
-              
-            case '(':
-              result += '(';
-              break;
-              
-            case ')':
-              result += ')';
-              break;
-              
-            case ':':
-              // 在对象属性后添加空格
-              result += ': ';
-              break;
-              
-            default:
-              // 处理操作符前后的空格
-              if (['+', '-', '*', '/', '=', '==', '===', '!=', '!==', '>', '<', '>=', '<=', '&&', '||'].includes(char + nextChar)) {
-                if (!result.endsWith(' ')) {
-                  result += ' ';
-                }
-                result += char;
-                if (nextChar !== ' ') {
-                  result += ' ';
-                }
-              } else {
-                result += char;
-              }
-          }
-          
-          lastChar = char;
-        }
-        
-        // 3. 最后再处理多余的空行和空格
-        result = result.replace(/\n\s*\n/g, '\n\n'); // 最多保留一个空行
-        result = result.replace(/^\s+/gm, match => ' '.repeat(match.length)); // 保持缩进中的空格数量
-        
-        return result.trim();
-      } catch (error) {
-        throw new Error('JavaScript语法错误: ' + error.message);
-      }
-    },
-    
-    formatHTML(code) {
-      try {
         // 完全按照预期格式处理HTML
         // 准备工作，清理输入代码
-        let html = code.trim();
+        let html = this.inputCode.trim();
         
         // 定义一些标签分类
         const selfClosingTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
@@ -337,19 +177,11 @@ export default {
         }
         
         // 最后清理多余的换行和空格
-        return result.trim();
+        this.outputCode = result.trim();
       } catch(error) {
         console.error('HTML格式化失败:', error);
-        return code.trim();
-      }
-    },
-    
-    formatCSS(code) {
-      try {
-        // 简单的CSS格式化处理
-        return code.trim();
-      } catch(error) {
-        throw new Error('CSS格式化失败: ' + error.message);
+        this.showCopyMessage('格式化失败：' + error.message);
+        this.outputCode = '格式化失败: ' + error.message;
       }
     },
     
@@ -409,34 +241,6 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   padding: 20px;
-}
-
-.options {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eee;
-}
-
-.option-group {
-  margin-right: 20px;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-}
-
-.option-group label {
-  margin-right: 10px;
-  display: flex;
-  align-items: center;
-}
-
-.option-group select,
-.option-group input[type="number"] {
-  padding: 5px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
 }
 
 .editor-wrapper {
