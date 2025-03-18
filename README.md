@@ -72,7 +72,7 @@ docker-compose up -d
 docker-compose down
 ```
 
-应用将在 http://localhost:8080 上运行。
+应用将在 http://localhost:30030 上运行。
 
 ## 💡 使用示例
 
