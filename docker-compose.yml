@@ -1,10 +1,8 @@
-version: '3'
-
 services:
-  app:
+  website:
     build: .
     ports:
-      - "30030:30030"
+      - "30030:8080"
     volumes:
       - .:/app
       - /app/node_modules

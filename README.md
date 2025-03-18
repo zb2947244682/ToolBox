@@ -64,10 +64,10 @@ docker-compose down
 docker build -t markdown-editor .
 
 # 运行容器
-docker run -p 30030:30030 -d markdown-editor
+docker run -p 8080:8080 -d markdown-editor
 ```
 
-应用将在 http://localhost:30030 上运行。
+应用将在 http://localhost:8080 上运行。
 
 ## 💡 使用示例
 
