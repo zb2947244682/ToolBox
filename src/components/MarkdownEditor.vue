@@ -160,47 +160,7 @@ export default {
       this.markdownContent = savedContent;
     } else {
       // 示例内容
-      this.markdownContent = `# Markdown编辑器示例
-
-这是一个支持**Markdown**和*LaTeX*的编辑器。
-
-## Markdown功能
-
-- **粗体文本**
-- *斜体文本*
-- ~~删除线文本~~
-- [链接](https://www.example.com)
-- \`行内代码\`
-
-## LaTeX支持
-
-行内公式（美元符格式）: $E = mc^2$
-
-行内公式（括号格式）: \\( h_{\mu\nu} \\)
-
-块级公式（美元符格式）:
-
-$$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$
-
-块级公式（括号格式）:
-
-\\[ h_{\mu\nu} = 2 \\int \\frac{d^3k}{(2\\pi)^3} e^{i\\vec{k}\\cdot\\vec{x}} \\left[ h_+(\\vec{k}, t) e^+_{\\mu\\nu}(\\vec{k}) + h_\\times(\\vec{k}, t) e^\\times_{\\mu\\nu}(\\vec{k}) \\right] \\]
-
-其他LaTeX示例:
-- \\( h_+ \\) 和 \\( h_\\times \\) 分别表示两种偏振模式（正交和交叉）。
-- \\( e^+_{\\mu\\nu} \\) 和 \\( e^\\times_{\\mu\\nu} \\) 是偏振张量。
-- \\( \\vec{k} \\) 是波矢量，\\( \\vec{x} \\) 是空间坐标。
-
-代码块:
-
-\`\`\`javascript
-function hello() {
-  console.log('Hello, world!');
-}
-\`\`\`
-
-> 引用文本
-`;
+      this.markdownContent = "";
     }
     
     this.updateMarkdown();
