@@ -20,21 +20,6 @@ const routes = [
     path: '/code-formatter',
     name: 'CodeFormatter',
     component: () => import('../views/CodeFormatter.vue')
-  },
-  {
-    path: '/image-compressor',
-    name: 'ImageCompressor',
-    component: () => import('../views/ImageCompressor.vue')
-  },
-  {
-    path: '/calculator',
-    name: 'Calculator',
-    component: () => import('../views/Calculator.vue')
-  },
-  {
-    path: '/unit-converter',
-    name: 'UnitConverter',
-    component: () => import('../views/UnitConverter.vue')
   }
 ];
 

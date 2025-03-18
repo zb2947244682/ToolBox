@@ -32,21 +32,6 @@ export default {
           name: '代码格式化', 
           path: '/code-formatter',
           description: '格式化各种编程语言的代码，使其更加规范和易读'
-        },
-        { 
-          name: '图片压缩', 
-          path: '/image-compressor',
-          description: '无损压缩图片，减小图片体积同时保持高质量'
-        },
-        { 
-          name: '计算器', 
-          path: '/calculator',
-          description: '支持基础计算和科学计算的在线计算器'
-        },
-        { 
-          name: '单位转换', 
-          path: '/unit-converter',
-          description: '各种单位之间的相互转换，包括长度、重量、体积等'
         }
       ]
     };

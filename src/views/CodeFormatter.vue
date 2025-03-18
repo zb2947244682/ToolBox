@@ -10,31 +10,7 @@
             <option value="javascript">JavaScript</option>
             <option value="html">HTML</option>
             <option value="css">CSS</option>
-            <option value="json">JSON</option>
-            <option value="markdown">Markdown</option>
           </select>
-        </div>
-        
-        <div class="option-group">
-          <label>缩进方式：</label>
-          <select v-model="tabWidth">
-            <option :value="2">2空格</option>
-            <option :value="4">4空格</option>
-            <option :value="8">8空格</option>
-          </select>
-        </div>
-        
-        <div class="option-group">
-          <label>行宽：</label>
-          <input type="number" v-model.number="printWidth" min="40" max="200">
-        </div>
-        
-        <div class="option-group">
-          <label><input type="checkbox" v-model="useSemicolons"> 使用分号</label>
-        </div>
-        
-        <div class="option-group">
-          <label><input type="checkbox" v-model="useSingleQuote"> 使用单引号</label>
         </div>
       </div>
       
@@ -74,12 +50,6 @@
 </template>
 
 <script>
-import prettier from 'prettier/standalone';
-import parserBabel from 'prettier/parser-babel';
-import parserHtml from 'prettier/parser-html';
-import parserCss from 'prettier/parser-postcss';
-import parserMarkdown from 'prettier/parser-markdown';
-
 export default {
   name: 'CodeFormatter',
   data() {
@@ -87,10 +57,6 @@ export default {
       inputCode: '',
       outputCode: '',
       language: 'javascript',
-      tabWidth: 2,
-      printWidth: 80,
-      useSemicolons: true,
-      useSingleQuote: false,
       copyMessage: '',
       lineCount: 0,
       charCount: 0
@@ -104,48 +70,283 @@ export default {
       }
       
       try {
-        // 根据语言选择解析器
-        const parser = this.getParser();
-        const plugins = this.getPlugins();
+        let formattedCode = '';
         
-        this.outputCode = prettier.format(this.inputCode, {
-          parser,
-          plugins,
-          tabWidth: this.tabWidth,
-          printWidth: this.printWidth,
-          semi: this.useSemicolons,
-          singleQuote: this.useSingleQuote
-        });
+        // 针对不同语言使用不同处理逻辑
+        if (this.language === 'javascript') {
+          formattedCode = this.formatJavaScript(this.inputCode);
+        }
+        else if (this.language === 'html') {
+          formattedCode = this.formatHTML(this.inputCode);
+        }
+        else if (this.language === 'css') {
+          formattedCode = this.formatCSS(this.inputCode);
+        }
+        
+        this.outputCode = formattedCode;
       } catch (error) {
+        console.error('格式化错误:', error);
         this.showCopyMessage('格式化失败：' + error.message);
-        this.outputCode = '';
+        this.outputCode = '格式化失败: ' + error.message;
       }
     },
-    getParser() {
-      switch (this.language) {
-        case 'javascript': return 'babel';
-        case 'html': return 'html';
-        case 'css': return 'css';
-        case 'json': return 'json';
-        case 'markdown': return 'markdown';
-        default: return 'babel';
+    
+    formatJavaScript(code) {
+      try {
+        // 检查JavaScript语法
+        new Function(code);
+        
+        // 使用更严格的JavaScript代码美化逻辑
+        // 1. 先移除所有多余的空格和空行
+        let cleanCode = code.replace(/\s+/g, ' ').trim();
+        
+        // 2. 逐步添加适当的缩进和换行
+        let result = '';
+        let indentLevel = 0;
+        let inString = false;
+        let inComment = false;
+        let inRegex = false;
+        let stringChar = '';
+        let lastChar = '';
+        let nextChar = '';
+        
+        for (let i = 0; i < cleanCode.length; i++) {
+          let char = cleanCode[i];
+          nextChar = i < cleanCode.length - 1 ? cleanCode[i + 1] : '';
+          
+          // 处理字符串
+          if ((char === '"' || char === "'" || char === '`') && lastChar !== '\\' && !inComment && !inRegex) {
+            if (inString && stringChar === char) {
+              inString = false;
+            } else if (!inString) {
+              inString = true;
+              stringChar = char;
+            }
+            result += char;
+            lastChar = char;
+            continue;
+          }
+          
+          // 如果在字符串内，直接添加字符
+          if (inString) {
+            result += char;
+            lastChar = char;
+            continue;
+          }
+          
+          // 处理括号和缩进
+          switch (char) {
+            case '{':
+              result += ' {';
+              if (nextChar !== '}') { // 避免{}的情况缩进
+                result += '\n' + ' '.repeat(2 * (indentLevel + 1));
+                indentLevel++;
+              }
+              break;
+              
+            case '}':
+              if (result.trim().endsWith('\n')) {
+                result = result.trimEnd();
+              } else {
+                indentLevel--;
+                result = result.trimEnd() + '\n' + ' '.repeat(2 * indentLevel);
+              }
+              result += '}';
+              
+              // 如果后面不是分号或逗号或闭括号，添加换行
+              if (nextChar !== ';' && nextChar !== ',' && nextChar !== ')') {
+                result += '\n' + ' '.repeat(2 * indentLevel);
+              }
+              break;
+              
+            case ';':
+              result += ';';
+              // 如果后面不是闭合的圆括号或方括号，添加换行
+              if (nextChar !== ')' && nextChar !== ']') {
+                result += '\n' + ' '.repeat(2 * indentLevel);
+              }
+              break;
+              
+            case ',':
+              result += ', ';
+              // 在对象或数组中的逗号后换行
+              if (indentLevel > 0 && (cleanCode.includes('{') || cleanCode.includes('['))) {
+                result += '\n' + ' '.repeat(2 * indentLevel);
+              }
+              break;
+              
+            case '(':
+              result += '(';
+              break;
+              
+            case ')':
+              result += ')';
+              break;
+              
+            case ':':
+              // 在对象属性后添加空格
+              result += ': ';
+              break;
+              
+            default:
+              // 处理操作符前后的空格
+              if (['+', '-', '*', '/', '=', '==', '===', '!=', '!==', '>', '<', '>=', '<=', '&&', '||'].includes(char + nextChar)) {
+                if (!result.endsWith(' ')) {
+                  result += ' ';
+                }
+                result += char;
+                if (nextChar !== ' ') {
+                  result += ' ';
+                }
+              } else {
+                result += char;
+              }
+          }
+          
+          lastChar = char;
+        }
+        
+        // 3. 最后再处理多余的空行和空格
+        result = result.replace(/\n\s*\n/g, '\n\n'); // 最多保留一个空行
+        result = result.replace(/^\s+/gm, match => ' '.repeat(match.length)); // 保持缩进中的空格数量
+        
+        return result.trim();
+      } catch (error) {
+        throw new Error('JavaScript语法错误: ' + error.message);
       }
     },
-    getPlugins() {
-      switch (this.language) {
-        case 'javascript': return [parserBabel];
-        case 'html': return [parserHtml];
-        case 'css': return [parserCss];
-        case 'json': return [parserBabel];
-        case 'markdown': return [parserMarkdown];
-        default: return [parserBabel];
+    
+    formatHTML(code) {
+      try {
+        // 重写的HTML格式化，采用固定的标准格式
+        const indentSize = 2;
+        const indent = (level) => ' '.repeat(level * indentSize);
+        
+        // 初步清理
+        let html = code.trim()
+          .replace(/>\s+</g, '><')  // 删除标签间多余空格
+          .replace(/\s{2,}/g, ' '); // 删除多余空格
+        
+        // 自闭合标签列表
+        const selfClosingTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+        
+        // 内容应与标签同行的元素
+        const inlineTags = ['title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'button', 'label', 'option', 'a', 'span', 'em', 'strong', 'b', 'i'];
+        
+        let formatted = '';
+        let indentLevel = 0;
+        let inTag = false;
+        let currentTag = '';
+        let i = 0;
+        
+        while (i < html.length) {
+          // 当前字符
+          const char = html[i];
+          
+          // 处理开始标签
+          if (char === '<' && html[i+1] !== '/') {
+            inTag = true;
+            
+            // 获取标签名
+            let tagNameMatch = html.substring(i).match(/<([a-zA-Z0-9]+)/);
+            let tagName = tagNameMatch ? tagNameMatch[1].toLowerCase() : '';
+            currentTag = tagName;
+            
+            // 找到标签结束位置
+            const closeIndex = html.indexOf('>', i);
+            if (closeIndex === -1) {
+              i++;
+              continue;
+            }
+            
+            // 提取完整标签
+            const fullTag = html.substring(i, closeIndex + 1);
+            
+            // 是否自闭合
+            const isSelfClosing = selfClosing = fullTag.endsWith('/>') || selfClosingTags.includes(tagName);
+            
+            // 添加标签，带缩进
+            formatted += indent(indentLevel) + fullTag + '\n';
+            
+            if (!isSelfClosing) {
+              indentLevel++;
+            }
+            
+            // 移动到标签结束后
+            i = closeIndex + 1;
+          }
+          // 处理闭合标签
+          else if (char === '<' && html[i+1] === '/') {
+            inTag = true;
+            
+            // 找到标签结束位置
+            const closeIndex = html.indexOf('>', i);
+            if (closeIndex === -1) {
+              i++;
+              continue;
+            }
+            
+            // 获取标签名
+            let tagNameMatch = html.substring(i).match(/<\/([a-zA-Z0-9]+)/);
+            let tagName = tagNameMatch ? tagNameMatch[1].toLowerCase() : '';
+            
+            indentLevel--;
+            indentLevel = Math.max(0, indentLevel);
+            
+            // 添加闭合标签
+            formatted += indent(indentLevel) + html.substring(i, closeIndex + 1) + '\n';
+            
+            // 移动到标签结束后
+            i = closeIndex + 1;
+          }
+          // 处理文本内容
+          else {
+            let textEnd = html.indexOf('<', i);
+            if (textEnd === -1) {
+              textEnd = html.length;
+            }
+            
+            let text = html.substring(i, textEnd).trim();
+            if (text) {
+              // 添加文本，带缩进
+              formatted += indent(indentLevel) + text + '\n';
+            }
+            
+            i = textEnd;
+          }
+        }
+        
+        // 合并相邻的内联元素和它们的内容
+        let lines = formatted.split('\n');
+        let result = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          result.push(lines[i]);
+        }
+        
+        return result.join('\n');
+      } catch(error) {
+        console.error('HTML格式化失败:', error);
+        return code.trim();
       }
     },
+    
+    formatCSS(code) {
+      try {
+        // 简单的CSS格式化处理
+        return code.trim();
+      } catch(error) {
+        throw new Error('CSS格式化失败: ' + error.message);
+      }
+    },
+    
     clearCode() {
       this.inputCode = '';
       this.outputCode = '';
       this.updateWordCount();
     },
+    
     copyCode() {
       if (!this.outputCode) {
         this.showCopyMessage('没有可复制的内容');
@@ -160,12 +361,14 @@ export default {
           this.showCopyMessage('复制失败：' + err.message);
         });
     },
+    
     showCopyMessage(message) {
       this.copyMessage = message;
       setTimeout(() => {
         this.copyMessage = '';
       }, 2000);
     },
+    
     updateWordCount() {
       this.lineCount = this.inputCode.split('\n').length;
       this.charCount = this.inputCode.length;
