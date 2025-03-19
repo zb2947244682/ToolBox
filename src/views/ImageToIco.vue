@@ -2,6 +2,12 @@
   <div class="image-to-ico-container">
     <h1 class="page-title">PNG转ICO</h1>
     
+    <div class="action-buttons" style="margin-bottom: 20px;">
+      <button @click="generateRandomIcon" class="random-btn" :disabled="generating">
+        {{ generating ? '生成中...' : '生成随机图标' }}
+      </button>
+    </div>
+
     <div class="upload-area" @drop.prevent="handleDrop" @dragover.prevent>
       <div class="drop-zone" @click="triggerFileInput">
         <p>拖拽PNG图片到此处或点击上传</p>
@@ -56,11 +62,102 @@ export default {
       selectedFile: null,
       originalImageUrl: null,
       converting: false,
+      generating: false,
       message: {
         show: false,
         text: '',
         type: 'info'
-      }
+      },
+      // 预定义的动物轮廓路径数据
+      animalPaths: {
+        cat: [
+          'M32,16 C36,16 40,20 40,24 C44,24 48,28 48,32 C48,40 40,48 32,48 C24,48 16,40 16,32 C16,28 20,24 24,24 C24,20 28,16 32,16 Z',  // 脸
+          'M28,32 C26,32 24,30 24,28 C24,26 26,24 28,24 C30,24 32,26 32,28 C32,30 30,32 28,32 Z',  // 左眼
+          'M36,32 C34,32 32,30 32,28 C32,26 34,24 36,24 C38,24 40,26 40,28 C40,30 38,32 36,32 Z',  // 右眼
+          'M32,36 L32,40 M28,40 C28,42 30,44 32,44 C34,44 36,42 36,40'  // 鼻子和嘴
+        ],
+        dog: [
+          'M16,32 C16,20 24,12 32,12 C40,12 48,20 48,32 C48,44 40,52 32,52 C24,52 16,44 16,32 Z',  // 脸
+          'M24,28 L20,24 M40,28 L44,24',  // 耳朵
+          'M28,32 A2,2 0 1,1 28,32.1 M36,32 A2,2 0 1,1 36,32.1',  // 眼睛
+          'M32,36 C32,36 28,40 32,44 C36,40 32,36 32,36 Z'  // 鼻子
+        ],
+        rabbit: [
+          'M24,8 L32,24 L40,8 L36,32 L28,32 L24,8 Z',  // 耳朵
+          'M20,32 C20,24 26,20 32,20 C38,20 44,24 44,32 C44,40 38,48 32,48 C26,48 20,40 20,32 Z',  // 脸
+          'M28,36 A2,2 0 1,1 28,36.1 M36,36 A2,2 0 1,1 36,36.1',  // 眼睛
+          'M32,40 L32,42 M30,44 C30,46 34,46 34,44'  // 鼻子和嘴
+        ],
+        bear: [
+          'M16,28 C16,16 24,8 32,8 C40,8 48,16 48,28 C48,40 40,48 32,48 C24,48 16,40 16,28 Z',  // 脸
+          'M22,20 C22,16 26,16 26,20 M38,20 C38,16 42,16 42,20',  // 耳朵
+          'M28,32 A2,2 0 1,1 28,32.1 M36,32 A2,2 0 1,1 36,32.1',  // 眼睛
+          'M32,36 C32,36 28,40 32,44 C36,40 32,36 32,36 Z'  // 鼻子
+        ],
+        fox: [
+          'M20,16 L32,40 L44,16 L38,36 L26,36 L20,16 Z',  // 脸
+          'M28,28 L24,24 M36,28 L40,24',  // 耳朵
+          'M30,32 A1.5,1.5 0 1,1 30,32.1 M34,32 A1.5,1.5 0 1,1 34,32.1',  // 眼睛
+          'M32,34 L32,36 M30,38 L34,38'  // 鼻子和嘴
+        ],
+        panda: [
+          'M16,32 C16,20 24,12 32,12 C40,12 48,20 48,32 C48,44 40,52 32,52 C24,52 16,44 16,32 Z',  // 脸
+          'M24,24 C20,24 20,32 24,32 C28,32 28,24 24,24 Z M40,24 C36,24 36,32 40,32 C44,32 44,24 40,24 Z',  // 眼圈
+          'M26,28 A2,2 0 1,1 26,28.1 M38,28 A2,2 0 1,1 38,28.1',  // 眼睛
+          'M32,36 C32,36 28,40 32,44 C36,40 32,36 32,36 Z'  // 鼻子
+        ],
+        penguin: [
+          'M24,12 C24,12 32,16 40,12 C40,24 32,44 32,44 C32,44 24,24 24,12 Z',  // 身体
+          'M28,20 A2,2 0 1,1 28,20.1 M36,20 A2,2 0 1,1 36,20.1',  // 眼睛
+          'M32,24 L32,28 M30,30 C30,32 34,32 34,30',  // 喙
+          'M26,36 L38,36'  // 脚
+        ],
+        owl: [
+          'M20,20 C20,12 26,8 32,8 C38,8 44,12 44,20 C44,28 38,36 32,36 C26,36 20,28 20,20 Z',  // 脸
+          'M24,16 C20,16 20,24 24,24 C28,24 28,16 24,16 Z M40,16 C36,16 36,24 40,24 C44,24 44,16 40,16 Z',  // 眼圈
+          'M26,20 A2,2 0 1,1 26,20.1 M38,20 A2,2 0 1,1 38,20.1',  // 眼睛
+          'M32,24 L32,28 L28,26 L32,28 L36,26'  // 喙
+        ],
+        elephant: [
+          'M16,32 C16,20 24,12 32,12 C40,12 48,20 48,32 C48,44 40,52 32,52 C24,52 16,44 16,32 Z',  // 脸
+          'M24,20 C20,24 20,28 24,32 M40,20 C44,24 44,28 40,32',  // 耳朵
+          'M28,36 A2,2 0 1,1 28,36.1 M36,36 A2,2 0 1,1 36,36.1',  // 眼睛
+          'M32,38 C32,38 32,46 28,50'  // 鼻子
+        ],
+        lion: [
+          'M16,32 C16,20 24,12 32,12 C40,12 48,20 48,32 C48,44 40,52 32,52 C24,52 16,44 16,32 Z',  // 脸
+          'M12,24 C12,24 20,28 20,32 M52,24 C52,24 44,28 44,32',  // 鬃毛
+          'M28,36 A2,2 0 1,1 28,36.1 M36,36 A2,2 0 1,1 36,36.1',  // 眼睛
+          'M32,40 C32,40 28,44 32,48 C36,44 32,40 32,40 Z'  // 鼻子
+        ]
+      },
+      // 预定义的颜色组合
+      colorSchemes: [
+        // 自然色系
+        { main: '#8B4513', accent: '#DEB887' },  // 棕色
+        { main: '#2E8B57', accent: '#98FB98' },  // 森林绿
+        { main: '#4682B4', accent: '#87CEEB' },  // 钢青色
+        { main: '#800000', accent: '#CD5C5C' },  // 栗色
+        { main: '#556B2F', accent: '#9ACD32' },  // 橄榄绿
+        // 柔和色系
+        { main: '#FFB6C1', accent: '#FFC0CB' },  // 粉色
+        { main: '#E6E6FA', accent: '#D8BFD8' },  // 淡紫色
+        { main: '#F0E68C', accent: '#EEE8AA' },  // 卡其色
+        { main: '#98FB98', accent: '#90EE90' },  // 淡绿色
+        { main: '#87CEEB', accent: '#ADD8E6' },  // 天蓝色
+        // 明亮色系
+        { main: '#FF4500', accent: '#FFA07A' },  // 橙红色
+        { main: '#FF1493', accent: '#FF69B4' },  // 深粉色
+        { main: '#00FF7F', accent: '#7FFF00' },  // 春绿色
+        { main: '#FF00FF', accent: '#FF69B4' },  // 洋红色
+        { main: '#1E90FF', accent: '#00BFFF' },  // 道奇蓝
+        // 暗色系
+        { main: '#2F4F4F', accent: '#696969' },  // 深灰色
+        { main: '#8B0000', accent: '#A52A2A' },  // 深红色
+        { main: '#006400', accent: '#228B22' },  // 深绿色
+        { main: '#000080', accent: '#0000CD' },  // 海军蓝
+        { main: '#4B0082', accent: '#483D8B' }   // 靛青色
+      ]
     };
   },
   methods: {
@@ -279,6 +376,123 @@ export default {
       setTimeout(() => {
         this.message.show = false;
       }, 3000);
+    },
+    // 生成随机颜色
+    getRandomColor(baseHue = null) {
+      const hue = baseHue ?? Math.random() * 360;
+      const saturation = 50 + Math.random() * 30; // 50-80%
+      const lightness = 45 + Math.random() * 25;  // 45-70%
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    },
+
+    // 生成互补色
+    getComplementaryColor(baseHue) {
+      const hue = (baseHue + 180) % 360;
+      const saturation = 50 + Math.random() * 30;
+      const lightness = 45 + Math.random() * 25;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    },
+
+    // 绘制圆形
+    drawCircle(ctx, x, y, radius, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    },
+
+    // 绘制曲线
+    drawCurve(ctx, startX, startY, endX, endY, color, thickness = 2) {
+      const controlX = startX + (Math.random() - 0.5) * 40;
+      const controlY = startY + (Math.random() - 0.5) * 40;
+      
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = thickness;
+      ctx.stroke();
+    },
+
+    // 绘制多边形
+    drawPolygon(ctx, centerX, centerY, radius, sides, color) {
+      ctx.beginPath();
+      for (let i = 0; i < sides; i++) {
+        const angle = (i * 2 * Math.PI) / sides;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    },
+    
+    // 绘制SVG路径
+    drawPath(ctx, path, color) {
+      const p = new Path2D(path);
+      ctx.fillStyle = color;
+      ctx.fill(p);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.stroke(p);
+    },
+    
+    // 生成随机图标
+    generateRandomIcon() {
+      this.generating = true;
+      
+      // 创建Canvas元素
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 设置画布大小为64x64像素
+      canvas.width = 64;
+      canvas.height = 64;
+      
+      // 设置背景色为白色
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 64, 64);
+      
+      // 随机选择一个动物和颜色组合
+      const animals = Object.entries(this.animalPaths);
+      const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
+      const randomColor = this.colorSchemes[Math.floor(Math.random() * this.colorSchemes.length)];
+      
+      // 绘制动物轮廓
+      randomAnimal[1].forEach((path, index) => {
+        // 主要部分使用主色调，细节使用强调色
+        const color = index === 0 ? randomColor.main : randomColor.accent;
+        this.drawPath(ctx, path, color);
+      });
+      
+      // 转换为ICO并下载
+      this.createIcoFile(canvas)
+        .then(icoData => {
+          const blob = new Blob([icoData], { type: 'image/x-icon' });
+          const url = URL.createObjectURL(blob);
+          
+          const downloadLink = this.$refs.downloadLink;
+          downloadLink.href = url;
+          downloadLink.download = `${randomAnimal[0]}-icon.ico`;
+          downloadLink.click();
+          
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 100);
+          
+          this.generating = false;
+          this.showMessage('随机图标生成成功！', 'success');
+        })
+        .catch(err => {
+          console.error('生成失败:', err);
+          this.showMessage('生成失败，请重试', 'error');
+          this.generating = false;
+        });
     }
   }
 };
@@ -286,152 +500,132 @@ export default {
 
 <style scoped>
 .image-to-ico-container {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .page-title {
-  font-size: 2rem;
-  color: #2c3e50;
-  margin-bottom: 20px;
   text-align: center;
+  color: #333;
+  margin-bottom: 30px;
 }
 
 .upload-area {
-  margin-bottom: 30px;
+  margin: 20px 0;
 }
 
 .drop-zone {
   border: 2px dashed #ccc;
+  border-radius: 8px;
   padding: 40px;
   text-align: center;
   cursor: pointer;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
 }
 
 .drop-zone:hover {
-  border-color: #42b983;
-  background-color: #f0f9f5;
+  border-color: #409EFF;
+  background-color: #f5f7fa;
 }
 
 .preview-section {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .image-preview-container {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
+  gap: 40px;
   margin: 20px 0;
-  flex-wrap: wrap;
 }
 
 .original-image {
   text-align: center;
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  background-color: #fafafa;
-  min-width: 200px;
 }
 
 .preview-image {
   max-width: 200px;
   max-height: 200px;
-  object-fit: contain;
-  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
 }
 
 .action-buttons {
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 20px;
   margin-top: 20px;
 }
 
-.action-buttons button, .action-buttons a {
-  padding: 8px 16px;
+.convert-btn,
+.clear-btn,
+.random-btn {
+  padding: 10px 20px;
   border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s;
   border: none;
-  outline: none;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.clear-btn {
-  background-color: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-}
-
-.clear-btn:hover {
-  background-color: #e0e0e0;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
 }
 
 .convert-btn {
-  background-color: #42b983;
+  background-color: #409EFF;
   color: white;
 }
 
 .convert-btn:hover {
-  background-color: #3aa876;
+  background-color: #66b1ff;
 }
 
 .convert-btn:disabled {
-  background-color: #a8d5c2;
+  background-color: #a0cfff;
+  cursor: not-allowed;
+}
+
+.clear-btn {
+  background-color: #909399;
+  color: white;
+}
+
+.clear-btn:hover {
+  background-color: #a6a9ad;
+}
+
+.random-btn {
+  background-color: #67C23A;
+  color: white;
+}
+
+.random-btn:hover {
+  background-color: #85ce61;
+}
+
+.random-btn:disabled {
+  background-color: #b3e19d;
   cursor: not-allowed;
 }
 
 .message-popup {
   position: fixed;
-  bottom: 20px;
+  top: 20px;
   right: 20px;
-  padding: 10px 15px;
+  padding: 10px 20px;
   border-radius: 4px;
   color: white;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  animation: fadeIn 0.3s;
 }
 
 .message-success {
-  background-color: #42b983;
+  background-color: #67C23A;
 }
 
 .message-error {
-  background-color: #e74c3c;
+  background-color: #F56C6C;
 }
 
 .message-info {
-  background-color: #3498db;
+  background-color: #909399;
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 768px) {
-  .image-preview-container {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .original-image {
-    margin-bottom: 20px;
-    width: 100%;
-  }
-}
-</style> 
+</style>
