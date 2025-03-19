@@ -52,7 +52,6 @@
     </div>
 
     <div v-if="selectedFile" class="preview-section">
-      <h3>预览</h3>
       <div class="image-preview-container">
         <div class="original-image">
           <h4>原始图片</h4>
