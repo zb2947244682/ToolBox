@@ -257,17 +257,22 @@ backend --> db
 
 <style scoped>
 .plantuml-editor {
-  height: 100vh;
+  height: 100%;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 防止出现整体滚动条 */
+  position: relative;
 }
 
 .editor-container {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 40px);
+  flex: 1;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* 防止容器出现滚动条 */
 }
 
 .toolbar {
@@ -275,6 +280,7 @@ backend --> db
   border-bottom: 1px solid #eee;
   display: flex;
   gap: 10px;
+  flex-shrink: 0; /* 防止工具栏被压缩 */
 }
 
 .example-select {
@@ -299,13 +305,16 @@ backend --> db
 
 .split-view {
   display: flex;
-  height: 100%;
+  flex: 1;
+  overflow: hidden; /* 防止分割视图出现滚动条 */
 }
 
 .editor-panel, .preview-panel {
   flex: 1;
   padding: 20px;
-  overflow: auto;
+  overflow: hidden; /* 改为hidden，避免多余的滚动条 */
+  display: flex;
+  flex-direction: column;
 }
 
 .editor-panel {
@@ -320,11 +329,23 @@ backend --> db
   padding: 10px;
   font-family: monospace;
   resize: none;
+  overflow-y: auto; /* 只在编辑器区域显示垂直滚动条 */
+  overflow-x: hidden; /* 隐藏水平滚动条 */
+}
+
+.preview-panel {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto; /* 只在预览区域显示垂直滚动条 */
+  overflow-x: hidden; /* 隐藏水平滚动条 */
+  display: flex;
+  flex-direction: column;
 }
 
 .diagram-preview {
-  max-width: 100%;
-  height: auto;
+  width: 100%; /* 固定宽度为100% */
+  height: auto; /* 高度自动适应 */
+  display: block; /* 去除默认的内联显示间隙 */
 }
 
 .placeholder {
@@ -335,5 +356,24 @@ backend --> db
   color: #999;
   border: 2px dashed #ddd;
   border-radius: 4px;
+}
+
+/* 美化滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style> 

@@ -499,9 +499,11 @@ export default {
 .markdown-editor {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   background-color: #f5f5f5;
+  overflow: hidden; /* 防止整体出现滚动条 */
+  position: relative; /* 改回relative定位，不会覆盖导航栏 */
 }
 
 .editor-header {
@@ -512,6 +514,8 @@ export default {
   background-color: #2c3e50;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10; /* 确保头部在顶层 */
+  flex-shrink: 0; /* 防止头部被压缩 */
 }
 
 .editor-header h1 {
@@ -542,22 +546,22 @@ export default {
 .editor-container {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  overflow: hidden; /* 防止容器本身出现滚动条 */
+  position: relative;
 }
 
 .editor-section, .preview-section {
   flex: 1;
   height: 100%;
-  overflow: auto;
+  overflow: hidden; /* 改为hidden，避免多余的滚动条 */
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .editor-section {
   background-color: #fff;
   border-right: 1px solid #e0e0e0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 .markdown-input {
@@ -570,6 +574,8 @@ export default {
   font-family: 'Consolas', monospace;
   font-size: 15px;
   line-height: 1.6;
+  overflow-y: auto; /* 只在文本区域显示垂直滚动条 */
+  overflow-x: hidden; /* 隐藏水平滚动条 */
 }
 
 .editor-statusbar {
@@ -582,6 +588,7 @@ export default {
   justify-content: flex-end;
   color: #666;
   font-size: 12px;
+  flex-shrink: 0; /* 防止状态栏被压缩 */
 }
 
 .editor-statusbar span {
@@ -590,6 +597,8 @@ export default {
 
 .preview-section {
   background-color: #fff;
+  overflow-y: auto; /* 只在预览区域显示垂直滚动条 */
+  overflow-x: hidden; /* 隐藏水平滚动条 */
 }
 
 .preview-content {
@@ -607,6 +616,7 @@ export default {
   border-radius: 4px;
   opacity: 0;
   transition: opacity 0.3s ease;
+  z-index: 1000; /* 确保提示信息显示在最上层 */
 }
 
 .copy-message.show {
