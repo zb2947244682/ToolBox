@@ -35,6 +35,14 @@
             @click="showFullscreen" 
             title="点击全屏查看" 
           />
+          <canvas 
+            v-if="showCanvas" 
+            ref="previewCanvas" 
+            style="display: none;"
+            class="diagram-preview" 
+            @click="showFullscreen" 
+            title="点击全屏查看"
+          ></canvas>
           <div v-else class="placeholder">
             图表预览区域
           </div>
@@ -45,7 +53,7 @@
     <!-- 全屏预览模态框 -->
     <div v-if="isFullscreen" class="fullscreen-modal" @click="closeFullscreen">
       <div class="fullscreen-content">
-        <img :src="fullscreenImageUrl || diagramUrl" alt="PlantUML图表全屏预览" class="fullscreen-image" />
+        <img :src="fullscreenImageUrl" alt="PlantUML图表全屏预览" class="fullscreen-image" />
         <div class="fullscreen-close" @click.stop="closeFullscreen">×</div>
         <div class="fullscreen-hint">点击任意位置关闭</div>
       </div>
@@ -66,6 +74,9 @@ export default {
       selectedExample: '',
       isFullscreen: false,
       isDownloading: false,
+      showCanvas: false,
+      canvasDataUrl: '',
+      rawSvgUrl: '',
       examples: {
         class: `@startuml
 ' 类图示例
@@ -217,26 +228,13 @@ backend --> db
   methods: {
     // 显示全屏预览
     showFullscreen() {
-      if (this.diagramUrl) {
+      if (this.canvasDataUrl) {
         this.isFullscreen = true;
         // 添加ESC键监听，方便用户按ESC退出全屏
         document.addEventListener('keydown', this.handleEscKey);
         
-        // 获取带有更高宽度参数的图片URL用于全屏显示
-        if (this.plantUmlCode) {
-          try {
-            const encoded = plantumlEncoder.encode(this.plantUmlCode);
-            // 使用本地Docker的plantuml-server服务，并设置更大宽度
-            this.fullscreenImageUrl = `/plantuml/svg/${encoded}?width=1920`;
-            
-            // 预加载全屏图片
-            const img = new Image();
-            img.src = this.fullscreenImageUrl;
-          } catch (error) {
-            console.error('生成全屏图片时出错:', error);
-            this.fullscreenImageUrl = this.diagramUrl;
-          }
-        }
+        // 使用已经生成的Canvas数据
+        this.fullscreenImageUrl = this.canvasDataUrl;
       }
     },
     
@@ -253,37 +251,29 @@ backend --> db
         this.closeFullscreen();
       }
     },
-    generateDiagram() {
-      if (!this.plantUmlCode) return;
+    async generateDiagram() {
+      if (!this.plantUmlCode) {
+        this.showCanvas = false;
+        this.diagramUrl = '';
+        return;
+      }
       
       try {
         const encoded = plantumlEncoder.encode(this.plantUmlCode);
-        // 使用本地Docker的plantuml-server服务
-        this.diagramUrl = `/plantuml/svg/${encoded}`;
-      } catch (error) {
-        console.error('生成图表时出错:', error);
-      }
-    },
-    async downloadDiagram() {
-      if (!this.plantUmlCode) return;
-      
-      try {
-        // 显示下载中提示
-        this.isDownloading = true;
-        
-        // 直接获取页面上的SVG图片元素
-        const svgElement = document.querySelector('.diagram-preview');
-        if (!svgElement) {
-          throw new Error('无法获取当前图表元素');
+        // 使用本地Docker的plantuml-server服务获取原始SVG
+
+        if(location.hostname !== 'localhost'){
+          this.rawSvgUrl = `/plantuml/svg/${encoded}`;
+        }else{
+          this.rawSvgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
         }
         
         // 创建一个Canvas元素
         const canvas = document.createElement('canvas');
         // 设置Canvas大小为1920像素宽
         canvas.width = 1920;
-        // 根据SVG比例计算高度
-        const aspectRatio = svgElement.naturalHeight / svgElement.naturalWidth;
-        canvas.height = Math.round(1920 * aspectRatio) || 1080;
+        // 初始高度，稍后会根据图像比例调整
+        canvas.height = 1080;
         
         const ctx = canvas.getContext('2d');
         // 设置白色背景
@@ -293,12 +283,17 @@ backend --> db
         // 创建Image对象
         const img = new Image();
         img.crossOrigin = 'Anonymous';
-        // 使用当前URL但添加时间戳防止缓存问题
-        img.src = this.diagramUrl + '?t=' + new Date().getTime();
+        img.src = this.rawSvgUrl + '?t=' + new Date().getTime();
         
         // 等待图片加载完成后绘制到Canvas
         await new Promise((resolve, reject) => {
           img.onload = () => {
+            // 根据SVG比例计算高度
+            const aspectRatio = img.naturalHeight / img.naturalWidth;
+            canvas.height = Math.round(1920 * aspectRatio) || 1080;
+            // 重新设置白色背景（因为改变高度可能会清除先前的背景）
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             // 在Canvas上绘制图片
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             resolve();
@@ -307,17 +302,73 @@ backend --> db
         });
         
         // 从Canvas获取PNG数据
-        const dataUrl = canvas.toDataURL('image/png');
+        this.canvasDataUrl = canvas.toDataURL('image/png');
+        this.diagramUrl = this.canvasDataUrl;
+        this.showCanvas = true;
         
-        // 创建下载链接
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = 'plantuml-diagram.png';
+        // 更新预览Canvas（如果已渲染到DOM）
+        this.$nextTick(() => {
+          const previewCanvas = this.$refs.previewCanvas;
+          if (previewCanvas) {
+            const previewCtx = previewCanvas.getContext('2d');
+            // 设置预览Canvas的尺寸（保持比例但适应视图）
+            const displayWidth = previewCanvas.parentElement.clientWidth;
+            const aspectRatio = canvas.height / canvas.width;
+            previewCanvas.width = displayWidth;
+            previewCanvas.height = displayWidth * aspectRatio;
+            
+            // 创建临时图像复制到预览Canvas
+            const tempImg = new Image();
+            tempImg.onload = () => {
+              previewCtx.drawImage(tempImg, 0, 0, previewCanvas.width, previewCanvas.height);
+            };
+            tempImg.src = this.canvasDataUrl;
+          }
+        });
+      } catch (error) {
+        console.error('生成图表时出错:', error);
+        // 出错时回退到原始方法
+        this.showCanvas = false;
+        this.diagramUrl = this.rawSvgUrl;
+      }
+    },
+    async downloadDiagram() {
+      if (!this.plantUmlCode) return;
+      
+      try {
+        // 显示下载中提示
+        this.isDownloading = true;
         
-        // 触发下载
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // 如果已经有生成的Canvas数据，直接使用
+        if (this.canvasDataUrl) {
+          // 创建下载链接
+          const link = document.createElement('a');
+          link.href = this.canvasDataUrl;
+          link.download = 'plantuml-diagram.png';
+          
+          // 触发下载
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          this.isDownloading = false;
+          return;
+        }
+        
+        // 如果没有生成的Canvas数据，先调用generateDiagram生成
+        await this.generateDiagram();
+        
+        // 现在应该有canvasDataUrl了，再次尝试下载
+        if (this.canvasDataUrl) {
+          const link = document.createElement('a');
+          link.href = this.canvasDataUrl;
+          link.download = 'plantuml-diagram.png';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          throw new Error('无法生成图表数据');
+        }
         
         this.isDownloading = false;
       } catch (error) {
