@@ -10,41 +10,41 @@
     </div>
 
     <!-- 配置弹窗 -->
-    <div v-if="showConfig" class="config-modal">
+    <div v-if="showConfig" class="config-modal" @keyup.esc="closeConfig" tabindex="0" ref="configModal">
       <div class="config-modal-content">
         <div class="config-modal-header">
           <h2>OSS配置</h2>
-          <button @click="showConfig = false" class="close-btn">
+          <button @click="closeConfig" class="close-btn">
             关闭
           </button>
         </div>
         <div class="config-panel">
           <div class="form-group">
             <label>AccessKey ID:</label>
-            <input v-model="config.accessKeyId" type="text" placeholder="请输入AccessKey ID" autocomplete="off">
+            <input v-model="editConfig.accessKeyId" type="text" placeholder="请输入AccessKey ID" autocomplete="off">
           </div>
           <div class="form-group">
             <label>AccessKey Secret:</label>
-            <input v-model="config.accessKeySecret" type="password" placeholder="请输入AccessKey Secret" autocomplete="off">
+            <input v-model="editConfig.accessKeySecret" type="password" placeholder="请输入AccessKey Secret" autocomplete="off">
           </div>
           <div class="form-group">
             <label>Bucket:</label>
-            <input v-model="config.bucket" type="text" placeholder="请输入Bucket名称" autocomplete="off">
+            <input v-model="editConfig.bucket" type="text" placeholder="请输入Bucket名称" autocomplete="off">
           </div>
           <div class="form-group">
             <label>Region:</label>
-            <input v-model="config.region" type="text" placeholder="例如: oss-cn-shanghai" autocomplete="off">
+            <input v-model="editConfig.region" type="text" placeholder="例如: oss-cn-shanghai" autocomplete="off">
           </div>
           <div class="form-group">
             <label>CDN域名:</label>
-            <input v-model="config.cdnDomain" type="text" placeholder="例如: https://cdn.example.com" autocomplete="off">
+            <input v-model="editConfig.cdnDomain" type="text" placeholder="例如: https://cdn.example.com" autocomplete="off">
           </div>
           <div class="form-group">
             <label>上传路径:</label>
-            <input v-model="uploadPath" type="text" placeholder="例如: /images" autocomplete="off">
+            <input v-model="editUploadPath" type="text" placeholder="例如: /images" autocomplete="off">
           </div>
           <div class="modal-footer">
-            <button @click="showConfig = false" class="cancel-btn">取消</button>
+            <button @click="closeConfig" class="cancel-btn">取消</button>
             <button @click="saveConfig" class="save-btn">保存配置</button>
           </div>
         </div>
@@ -165,7 +165,16 @@ export default {
         cdnDomain: localStorage.getItem('ossCdnDomain') || '',
         secure: true
       },
+      editConfig: {
+        accessKeyId: '',
+        accessKeySecret: '',
+        bucket: '',
+        region: '',
+        cdnDomain: '',
+        secure: true
+      },
       uploadPath: localStorage.getItem('ossUploadPath') || '/images',
+      editUploadPath: '',
       files: [],
       uploadedFiles: [],
       uploading: false,
@@ -179,6 +188,12 @@ export default {
     }
   },
   watch: {
+    showConfig(val) {
+      if (val) {
+        this.editConfig = JSON.parse(JSON.stringify(this.config))
+        this.editUploadPath = this.uploadPath
+      }
+    },
     'config.accessKeyId'(val) {
       localStorage.setItem('ossAccessKeyId', val)
     },
@@ -216,13 +231,20 @@ export default {
       }, 3000)
     },
     saveConfig() {
+      this.config = JSON.parse(JSON.stringify(this.editConfig))
+      this.uploadPath = this.editUploadPath
+
       localStorage.setItem('ossAccessKeyId', this.config.accessKeyId)
       localStorage.setItem('ossAccessKeySecret', this.config.accessKeySecret)
       localStorage.setItem('ossBucket', this.config.bucket)
       localStorage.setItem('ossRegion', this.config.region)
       localStorage.setItem('ossCdnDomain', this.config.cdnDomain)
       localStorage.setItem('ossUploadPath', this.uploadPath)
+      
       this.showMessage('配置已保存', 'success')
+      this.showConfig = false
+    },
+    closeConfig() {
       this.showConfig = false
     },
     triggerFileInput() {
@@ -344,6 +366,22 @@ export default {
         document.body.removeChild(textarea)
       })
     },
+  },
+  mounted() {
+    // 监听ESC键
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.showConfig) {
+        this.closeConfig()
+      }
+    })
+  },
+  beforeDestroy() {
+    // 移除事件监听器
+    document.removeEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.showConfig) {
+        this.closeConfig()
+      }
+    })
   }
 }
 </script>
