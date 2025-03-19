@@ -8,9 +8,11 @@
  * @param {File} options.file - 图片文件
  * @param {String} options.format - 目标格式 (jpg, png, webp, ico)
  * @param {Number} options.quality - 图片质量 (1-100)
+ * @param {Number} options.width - 输出图片宽度 (像素)
+ * @param {Number} options.height - 输出图片高度 (像素)
  * @returns {Promise<Object>} 包含blob和dataUrl的对象
  */
-export const convertToFormat = ({ file, format, quality = 80 }) => {
+export const convertToFormat = ({ file, format, quality = 80, width = 0, height = 0 }) => {
   return new Promise((resolve, reject) => {
     // 创建FileReader读取文件
     const reader = new FileReader();
@@ -25,18 +27,29 @@ export const convertToFormat = ({ file, format, quality = 80 }) => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           
-          // 设置Canvas尺寸与图片一致
-          // 对于ICO格式，固定尺寸为64x64
+          // 确定Canvas尺寸
+          let outputWidth, outputHeight;
+          
+          // 如果ICO格式，强制设置为64x64
           if (format === 'ico') {
-            canvas.width = 64;
-            canvas.height = 64;
+            outputWidth = 64;
+            outputHeight = 64;
+          } else if (width > 0 && height > 0) {
+            // 使用指定尺寸
+            outputWidth = width;
+            outputHeight = height;
           } else {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            // 使用原始尺寸
+            outputWidth = img.width;
+            outputHeight = img.height;
           }
           
-          // 绘制图片到Canvas
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          // 设置Canvas尺寸
+          canvas.width = outputWidth;
+          canvas.height = outputHeight;
+          
+          // 绘制图片到Canvas，自动缩放
+          ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
           
           // 根据不同格式进行转换
           if (format === 'ico') {

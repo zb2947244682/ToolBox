@@ -1,6 +1,6 @@
 <template>
   <div class="file-upload-container">
-    <h1 class="page-title">OSS上传</h1>
+    <h1 class="page-title">阿里OSS上传</h1>
     
     <!-- 设置按钮 -->
     <div class="settings-button-container">

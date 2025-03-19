@@ -2,16 +2,40 @@
   <div class="image-processor-container">
     <h1 class="page-title">图片处理工具</h1>
     
-    <div class="upload-area" @drop.prevent="handleDrop" @dragover.prevent>
-      <div class="drop-zone" @click="triggerFileInput">
-        <p>拖拽图片到此处或点击上传</p>
-        <input
-          type="file"
-          ref="fileInput"
-          accept="image/*"
-          @change="handleFileSelect"
-          style="display: none"
-        >
+    <div v-if="!selectedFile" class="initial-view">
+      <div class="action-buttons" style="margin-bottom: 20px;">
+        <button @click="triggerFileInput" class="action-btn">
+          <i class="el-icon-upload"></i> 上传图片
+        </button>
+        <button @click="showBase64Input = true" class="action-btn">
+          <i class="el-icon-document"></i> 粘贴Base64导入
+        </button>
+      </div>
+
+      <div class="upload-area" @drop.prevent="handleDrop" @dragover.prevent>
+        <div class="drop-zone" @click="triggerFileInput">
+          <p>拖拽图片到此处或点击上传</p>
+          <input
+            type="file"
+            ref="fileInput"
+            accept="image/*"
+            @change="handleFileSelect"
+            style="display: none"
+          >
+        </div>
+      </div>
+
+      <div class="base64-input-section" v-if="showBase64Input">
+        <h3>Base64导入</h3>
+        <textarea 
+          v-model="base64Input" 
+          placeholder="输入Base64编码内容" 
+          class="base64-textarea"
+        ></textarea>
+        <div class="base64-buttons">
+          <button @click="processBase64Input" class="action-btn">处理Base64图片</button>
+          <button @click="closeBase64Input" class="clear-btn">取消</button>
+        </div>
       </div>
     </div>
 
@@ -22,11 +46,13 @@
           <h4>原始图片</h4>
           <img :src="originalImageUrl" alt="原始图片" class="preview-image">
           <p>{{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</p>
+          <p>尺寸: {{ originalWidth }} x {{ originalHeight }} px</p>
         </div>
         <div v-if="processedImageUrl" class="processed-image">
           <h4>处理后图片</h4>
           <img :src="processedImageUrl" alt="处理后图片" class="preview-image">
           <p v-if="processedImageSize">处理后大小: {{ formatFileSize(processedImageSize) }}</p>
+          <p>尺寸: {{ outputWidth }} x {{ outputHeight }} px</p>
         </div>
       </div>
       
@@ -59,9 +85,43 @@
             <span>{{ imageQuality }}%</span>
           </div>
         </div>
+
+        <div class="settings-group">
+          <h4>图片尺寸调整</h4>
+          <div class="size-controls">
+            <div class="size-input-group">
+              <label>宽度 (px)</label>
+              <input 
+                type="number" 
+                v-model.number="outputWidth" 
+                min="1" 
+                @change="handleWidthChange"
+              >
+            </div>
+            <div class="size-input-group">
+              <label>高度 (px)</label>
+              <input 
+                type="number" 
+                v-model.number="outputHeight" 
+                min="1" 
+                @change="handleHeightChange"
+              >
+            </div>
+            <div class="checkbox-group">
+              <input 
+                type="checkbox" 
+                id="maintain-ratio" 
+                v-model="maintainAspectRatio"
+              >
+              <label for="maintain-ratio">保持宽高比</label>
+            </div>
+            <button @click="resetDimensions" class="mini-btn">重置尺寸</button>
+          </div>
+        </div>
         
         <div class="settings-group" v-if="selectedFormat === 'ico'">
           <h4>ICO尺寸固定为64x64像素</h4>
+          <p class="note">注意：选择ICO格式时，尺寸将被固定为64x64像素</p>
         </div>
       </div>
       
@@ -74,9 +134,6 @@
         </button>
         <button @click="copyBase64Processed" class="action-btn" :disabled="!processedImageUrl">
           复制处理后Base64
-        </button>
-        <button @click="exportFromBase64" class="action-btn" :disabled="!processedImageUrl">
-          从Base64导出
         </button>
         <button @click="convertAndDownload" class="convert-btn">
           {{ converting ? '导出中...' : '导出图片' }}
@@ -106,6 +163,15 @@
       ref="downloadLink" 
       style="display: none;"
     ></a>
+
+    <!-- 隐藏的文件输入框，始终存在 -->
+    <input
+      type="file"
+      ref="fileInput"
+      accept="image/*"
+      @change="handleFileSelect"
+      style="display: none"
+    >
   </div>
 </template>
 
@@ -125,6 +191,11 @@ export default {
       selectedFormat: 'jpg',
       base64Input: '',
       showBase64Input: false,
+      originalWidth: 0,
+      originalHeight: 0,
+      outputWidth: 0,
+      outputHeight: 0,
+      maintainAspectRatio: true,
       message: {
         show: false,
         text: '',
@@ -164,18 +235,52 @@ export default {
       this.selectedFile = file;
       this.originalImageUrl = URL.createObjectURL(file);
       
-      // 处理图片生成预览
+      // 获取图像原始尺寸
+      const img = new Image();
+      img.onload = () => {
+        this.originalWidth = img.width;
+        this.originalHeight = img.height;
+        this.resetDimensions();
+        // 处理图片生成预览
+        this.processImage();
+      };
+      img.src = this.originalImageUrl;
+    },
+    resetDimensions() {
+      this.outputWidth = this.originalWidth;
+      this.outputHeight = this.originalHeight;
+    },
+    handleWidthChange() {
+      if (this.maintainAspectRatio && this.originalWidth > 0) {
+        // 计算新的高度，保持宽高比
+        this.outputHeight = Math.round(this.outputWidth * (this.originalHeight / this.originalWidth));
+      }
+      this.processImage();
+    },
+    handleHeightChange() {
+      if (this.maintainAspectRatio && this.originalHeight > 0) {
+        // 计算新的宽度，保持宽高比
+        this.outputWidth = Math.round(this.outputHeight * (this.originalWidth / this.originalHeight));
+      }
       this.processImage();
     },
     async processImage() {
       if (!this.selectedFile) return;
       
       try {
+        // 特殊处理ICO格式的尺寸
+        if (this.selectedFormat === 'ico') {
+          this.outputWidth = 64;
+          this.outputHeight = 64;
+        }
+        
         // 转换图片
         const result = await convertToFormat({
           file: this.selectedFile,
           format: this.selectedFormat,
-          quality: this.imageQuality
+          quality: this.imageQuality,
+          width: this.outputWidth,
+          height: this.outputHeight
         });
         
         // 更新处理后的图片URL和大小
@@ -191,7 +296,13 @@ export default {
       this.originalImageUrl = null;
       this.processedImageUrl = null;
       this.processedImageSize = 0;
+      this.originalWidth = 0;
+      this.originalHeight = 0;
+      this.outputWidth = 0;
+      this.outputHeight = 0;
       this.$refs.fileInput.value = '';
+      this.showBase64Input = false;
+      this.base64Input = '';
     },
     async convertAndDownload() {
       if (!this.selectedFile) return;
@@ -203,7 +314,9 @@ export default {
         const result = await convertToFormat({
           file: this.selectedFile,
           format: this.selectedFormat,
-          quality: this.imageQuality
+          quality: this.imageQuality,
+          width: this.outputWidth,
+          height: this.outputHeight
         });
         
         // 创建下载链接
@@ -288,9 +401,6 @@ export default {
         this.showMessage('复制失败，请重试', 'error');
       }
     },
-    exportFromBase64() {
-      this.showBase64Input = true;
-    },
     closeBase64Input() {
       this.showBase64Input = false;
       this.base64Input = '';
@@ -321,7 +431,19 @@ export default {
   },
   watch: {
     selectedFormat() {
+      // 特殊处理ICO格式的尺寸限制
+      if (this.selectedFormat === 'ico') {
+        this.outputWidth = 64;
+        this.outputHeight = 64;
+      }
       this.processImage();
+    },
+    maintainAspectRatio(newVal) {
+      if (newVal && this.originalWidth > 0 && this.originalHeight > 0) {
+        // 重新调整高度以维持宽高比
+        this.outputHeight = Math.round(this.outputWidth * (this.originalHeight / this.originalWidth));
+        this.processImage();
+      }
     }
   }
 };
@@ -337,6 +459,10 @@ export default {
 .page-title {
   text-align: center;
   color: #333;
+  margin-bottom: 30px;
+}
+
+.initial-view {
   margin-bottom: 30px;
 }
 
@@ -426,6 +552,57 @@ export default {
 .quality-slider input {
   flex: 1;
   height: 8px;
+}
+
+.size-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+.size-input-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+}
+
+.size-input-group label {
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.size-input-group input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+}
+
+.mini-btn {
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mini-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.note {
+  font-size: 0.9rem;
+  color: #F56C6C;
+  margin-top: 5px;
 }
 
 .action-buttons {
