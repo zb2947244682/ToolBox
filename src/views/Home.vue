@@ -62,6 +62,21 @@ export default {
           name: 'PlantUML编辑器',
           path: '/plantuml-editor',
           description: '在线绘制UML图表，支持类图、时序图、用例图和活动图，实时预览'
+        },
+        {
+          name: '颜色选择器/转换器',
+          path: '/color-converter',
+          description: '提供颜色选择器和格式转换功能，支持RGB、HEX、HSL等格式互转，方便前端开发处理颜色'
+        },
+        {
+          name: 'URL编码/解码',
+          path: '/url-encoder',
+          description: '编码或解码URL参数，支持encodeURI、encodeURIComponent和Base64等多种编解码方式'
+        },
+        {
+          name: '加密/解密工具',
+          path: '/encryption-tool',
+          description: '提供MD5、SHA256哈希计算和AES加密/解密等功能，满足基本的安全相关需求'
         }
       ]
     };

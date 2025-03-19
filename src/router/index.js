@@ -49,6 +49,21 @@ const routes = [
     path: '/plantuml-editor',
     name: 'PlantUMLEditor',
     component: () => import('../views/PlantUMLEditor.vue')
+  },
+  {
+    path: '/color-converter',
+    name: 'ColorConverter',
+    component: () => import('../views/ColorConverter.vue')
+  },
+  {
+    path: '/url-encoder',
+    name: 'UrlEncoder',
+    component: () => import('../views/UrlEncoder.vue')
+  },
+  {
+    path: '/encryption-tool',
+    name: 'EncryptionTool',
+    component: () => import('../views/EncryptionTool.vue')
   }
 ];
 
