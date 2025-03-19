@@ -252,7 +252,7 @@ export default {
 
       try {
         for (const file of this.files) {
-          const fileName = `${this.uploadPath}/${Date.now()}-${file.name}`
+          const fileName = `${this.uploadPath}/${file.name}`
           const result = await this.client.put(fileName, file)
           this.uploadedFiles.unshift({
             name: file.name,
