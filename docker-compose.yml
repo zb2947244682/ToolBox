@@ -10,4 +10,21 @@ services:
       - "30030:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    restart: unless-stopped 
+    restart: unless-stopped
+    depends_on:
+      - plantuml
+    networks:
+      - app-network
+      
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    container_name: plantuml-server
+    restart: unless-stopped
+    environment:
+      - PLANTUML_LIMIT_SIZE=8192
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 

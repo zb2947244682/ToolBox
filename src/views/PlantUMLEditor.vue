@@ -226,8 +226,8 @@ backend --> db
         if (this.plantUmlCode) {
           try {
             const encoded = plantumlEncoder.encode(this.plantUmlCode);
-            // 使用SVG格式并明确设置为1920像素宽度
-            this.fullscreenImageUrl = `https://www.plantuml.com/plantuml/svg/${encoded}?width=1920`;
+            // 使用本地Docker的plantuml-server服务，并设置更大宽度
+            this.fullscreenImageUrl = `/plantuml/svg/${encoded}?width=1920`;
             
             // 预加载全屏图片
             const img = new Image();
@@ -258,8 +258,8 @@ backend --> db
       
       try {
         const encoded = plantumlEncoder.encode(this.plantUmlCode);
-        // 使用高质量SVG格式，但不添加宽度参数（预览用）
-        this.diagramUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
+        // 使用本地Docker的plantuml-server服务
+        this.diagramUrl = `/plantuml/svg/${encoded}`;
       } catch (error) {
         console.error('生成图表时出错:', error);
       }
