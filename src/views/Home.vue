@@ -52,6 +52,11 @@ export default {
           name: 'OSS上传',
           path: '/file-upload',
           description: '支持拖拽上传文件到阿里云OSS，可配置存储参数'
+        },
+        {
+          name: 'PNG转ICO',
+          path: '/image-to-ico',
+          description: '将PNG图片转换为ICO图标文件，适合制作网站favicon图标'
         }
       ]
     };

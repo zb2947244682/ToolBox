@@ -33,7 +33,8 @@ export default {
         { name: 'HTML格式化', path: '/html-formatter' },
         { name: 'CSS格式化', path: '/css-formatter' },
         { name: 'JSON格式化', path: '/json-formatter' },
-        { name: 'OSS上传', path: '/file-upload' }
+        { name: 'OSS上传', path: '/file-upload' },
+        { name: 'PNG转ICO', path: '/image-to-ico' }
       ]
     };
   }

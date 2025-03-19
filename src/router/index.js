@@ -39,6 +39,11 @@ const routes = [
     path: '/file-upload',
     name: 'FileUpload',
     component: () => import('../views/FileUpload.vue')
+  },
+  {
+    path: '/image-to-ico',
+    name: 'ImageToIco',
+    component: () => import('../views/ImageToIco.vue')
   }
 ];
 
