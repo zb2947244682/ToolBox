@@ -1,5 +1,5 @@
 <template>
-  <div class="image-processor-container">
+  <div class="image-processor-container" @paste="handlePaste">
     <h1 class="page-title">图片处理工具</h1>
     
     <div v-if="!selectedFile" class="initial-view">
@@ -9,6 +9,9 @@
         </button>
         <button @click="showBase64Input = true" class="action-btn">
           <i class="el-icon-document"></i> 粘贴Base64导入
+        </button>
+        <button @click="focusForPaste" class="action-btn">
+          <i class="el-icon-copy-document"></i> 从剪贴板粘贴
         </button>
       </div>
 
@@ -22,6 +25,14 @@
             @change="handleFileSelect"
             style="display: none"
           >
+        </div>
+      </div>
+
+      <div class="paste-area" v-if="showPastePrompt">
+        <div class="paste-prompt">
+          <p><i class="el-icon-copy-document"></i> 按下 Ctrl+V 粘贴图片</p>
+          <p class="paste-hint">您可以在任意位置按下键盘快捷键粘贴图片</p>
+          <button @click="showPastePrompt = false" class="mini-btn">取消</button>
         </div>
       </div>
 
@@ -191,6 +202,7 @@ export default {
       selectedFormat: 'jpg',
       base64Input: '',
       showBase64Input: false,
+      showPastePrompt: false,
       originalWidth: 0,
       originalHeight: 0,
       outputWidth: 0,
@@ -209,6 +221,14 @@ export default {
       ]
     };
   },
+  mounted() {
+    // 添加全局粘贴事件监听器
+    document.addEventListener('paste', this.handlePaste);
+  },
+  beforeDestroy() {
+    // 移除全局粘贴事件监听器
+    document.removeEventListener('paste', this.handlePaste);
+  },
   methods: {
     triggerFileInput() {
       this.$refs.fileInput.click();
@@ -223,6 +243,46 @@ export default {
       const files = e.target.files;
       if (files.length > 0) {
         this.processFile(files[0]);
+      }
+    },
+    focusForPaste() {
+      this.showPastePrompt = true;
+      // 聚焦到整个容器，以便捕获粘贴事件
+      this.$el.focus();
+    },
+    async handlePaste(e) {
+      // 获取剪贴板中的图片数据
+      const items = (e.clipboardData || window.clipboardData).items;
+      
+      if (!items) {
+        return;
+      }
+      
+      let imageItem = null;
+      
+      // 遍历剪贴板项，寻找图片类型
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          imageItem = items[i];
+          break;
+        }
+      }
+      
+      if (imageItem) {
+        // 将剪贴板中的图片转换为文件对象
+        const file = imageItem.getAsFile();
+        
+        if (file) {
+          // 处理图片文件
+          this.processFile(file);
+          this.showPastePrompt = false;
+          this.showMessage('已成功从剪贴板导入图片', 'success');
+        }
+      } else {
+        // 如果没有找到图片，但粘贴提示框是显示的，显示错误消息
+        if (this.showPastePrompt) {
+          this.showMessage('剪贴板中未找到图片', 'error');
+        }
       }
     },
     processFile(file) {
@@ -302,6 +362,7 @@ export default {
       this.outputHeight = 0;
       this.$refs.fileInput.value = '';
       this.showBase64Input = false;
+      this.showPastePrompt = false;
       this.base64Input = '';
     },
     async convertAndDownload() {
@@ -454,6 +515,7 @@ export default {
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
+  outline: none; /* 去除焦点边框 */
 }
 
 .page-title {
@@ -482,6 +544,36 @@ export default {
 .drop-zone:hover {
   border-color: #409EFF;
   background-color: #f5f7fa;
+}
+
+.paste-area {
+  margin: 20px 0;
+}
+
+.paste-prompt {
+  border: 2px dashed #67C23A;
+  border-radius: 8px;
+  padding: 30px;
+  text-align: center;
+  background-color: rgba(103, 194, 58, 0.1);
+  position: relative;
+}
+
+.paste-prompt p {
+  margin: 10px 0;
+  font-size: 1.2rem;
+  color: #67C23A;
+}
+
+.paste-hint {
+  font-size: 0.9rem !important;
+  color: #666 !important;
+}
+
+.paste-prompt .mini-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
 .preview-section {
