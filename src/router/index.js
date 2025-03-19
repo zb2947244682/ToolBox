@@ -41,9 +41,9 @@ const routes = [
     component: () => import('../views/FileUpload.vue')
   },
   {
-    path: '/image-to-ico',
-    name: 'ImageToIco',
-    component: () => import('../views/ImageToIco.vue')
+    path: '/image-processor',
+    name: 'ImageProcessor',
+    component: () => import('../views/ImageProcessor.vue')
   },
   {
     path: '/plantuml-editor',

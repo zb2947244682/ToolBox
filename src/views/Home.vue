@@ -54,9 +54,9 @@ export default {
           description: '支持拖拽上传文件到阿里云OSS，可配置存储参数'
         },
         {
-          name: 'PNG转ICO',
-          path: '/image-to-ico',
-          description: '将PNG图片转换为ICO图标文件，适合制作网站favicon图标'
+          name: '图片处理工具',
+          path: '/image-processor',
+          description: '多格式图片处理工具，支持JPG、PNG、WebP、ICO格式转换，压缩图片及Base64编码导入导出'
         },
         {
           name: 'PlantUML编辑器',

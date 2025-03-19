@@ -34,7 +34,7 @@ export default {
         { name: 'CSS格式化', path: '/css-formatter' },
         { name: 'JSON格式化', path: '/json-formatter' },
         { name: 'OSS上传', path: '/file-upload' },
-        { name: 'PNG转ICO', path: '/image-to-ico' },
+        { name: '图片处理工具', path: '/image-processor' },
         { name: 'UML制图工具', path: '/plantuml-editor' },
         
       ]
