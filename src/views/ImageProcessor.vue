@@ -11,7 +11,7 @@
           <i class="el-icon-document"></i> 粘贴Base64导入
         </button>
         <button @click="focusForPaste" class="action-btn">
-          <i class="el-icon-copy-document"></i> 从剪贴板粘贴
+          <i class="el-icon-copy-document"></i> 从剪贴板导入
         </button>
       </div>
 
@@ -30,9 +30,10 @@
 
       <div class="paste-area" v-if="showPastePrompt">
         <div class="paste-prompt">
-          <p><i class="el-icon-copy-document"></i> 按下 Ctrl+V 粘贴图片</p>
+          <p v-if="readingClipboard"><i class="el-icon-loading"></i> 正在读取剪贴板...</p>
+          <p v-else><i class="el-icon-copy-document"></i> 按下 Ctrl+V 粘贴图片</p>
           <p class="paste-hint">您可以在任意位置按下键盘快捷键粘贴图片</p>
-          <button @click="showPastePrompt = false" class="mini-btn">取消</button>
+          <button @click="showPastePrompt = false; readingClipboard = false;" class="mini-btn">取消</button>
         </div>
       </div>
 
@@ -203,6 +204,7 @@ export default {
       base64Input: '',
       showBase64Input: false,
       showPastePrompt: false,
+      readingClipboard: false,
       originalWidth: 0,
       originalHeight: 0,
       outputWidth: 0,
@@ -247,8 +249,49 @@ export default {
     },
     focusForPaste() {
       this.showPastePrompt = true;
-      // 聚焦到整个容器，以便捕获粘贴事件
-      this.$el.focus();
+      this.readingClipboard = true;
+      
+      // 尝试直接读取剪贴板
+      this.readClipboardImage();
+    },
+    async readClipboardImage() {
+      try {
+        // 检查navigator.clipboard是否支持读取能力
+        if (navigator.clipboard && navigator.clipboard.read) {
+          const clipboardItems = await navigator.clipboard.read();
+          
+          for (const clipboardItem of clipboardItems) {
+            // 检查是否包含图片类型
+            if (clipboardItem.types.some(type => type.startsWith('image/'))) {
+              // 获取图片blob
+              const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
+              const blob = await clipboardItem.getType(imageType);
+              
+              // 创建临时文件对象
+              const file = new File([blob], "clipboard-image.png", { type: imageType });
+              
+              // 处理图片文件
+              this.processFile(file);
+              this.showPastePrompt = false;
+              this.readingClipboard = false;
+              this.showMessage('已成功从剪贴板导入图片', 'success');
+              return true;
+            }
+          }
+        }
+        
+        // 如果没有找到图片或不支持剪贴板API，返回失败
+        if (this.readingClipboard) {
+          this.showMessage('无法自动读取剪贴板，请手动按Ctrl+V粘贴', 'info');
+        }
+        return false;
+      } catch (error) {
+        console.error('读取剪贴板失败:', error);
+        if (this.readingClipboard) {
+          this.showMessage('读取剪贴板失败，请手动按Ctrl+V粘贴', 'info');
+        }
+        return false;
+      }
     },
     async handlePaste(e) {
       // 获取剪贴板中的图片数据
@@ -276,6 +319,7 @@ export default {
           // 处理图片文件
           this.processFile(file);
           this.showPastePrompt = false;
+          this.readingClipboard = false;
           this.showMessage('已成功从剪贴板导入图片', 'success');
         }
       } else {
@@ -363,6 +407,7 @@ export default {
       this.$refs.fileInput.value = '';
       this.showBase64Input = false;
       this.showPastePrompt = false;
+      this.readingClipboard = false;
       this.base64Input = '';
     },
     async convertAndDownload() {
@@ -797,5 +842,18 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.paste-prompt .el-icon-loading {
+  animation: rotating 2s linear infinite;
+}
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
