@@ -27,11 +27,27 @@
           ></textarea>
         </div>
         <div class="preview-panel">
-          <img v-if="diagramUrl" :src="diagramUrl" alt="PlantUML图表" class="diagram-preview" />
+          <img 
+            v-if="diagramUrl" 
+            :src="diagramUrl" 
+            alt="PlantUML图表" 
+            class="diagram-preview" 
+            @click="showFullscreen" 
+            title="点击全屏查看" 
+          />
           <div v-else class="placeholder">
             图表预览区域
           </div>
         </div>
+      </div>
+    </div>
+    
+    <!-- 全屏预览模态框 -->
+    <div v-if="isFullscreen" class="fullscreen-modal" @click="closeFullscreen">
+      <div class="fullscreen-content">
+        <img :src="fullscreenImageUrl || diagramUrl" alt="PlantUML图表全屏预览" class="fullscreen-image" />
+        <div class="fullscreen-close" @click.stop="closeFullscreen">×</div>
+        <div class="fullscreen-hint">点击任意位置关闭</div>
       </div>
     </div>
   </div>
@@ -46,7 +62,10 @@ export default {
     return {
       plantUmlCode: '',
       diagramUrl: '',
+      fullscreenImageUrl: '',
       selectedExample: '',
+      isFullscreen: false,
+      isDownloading: false,
       examples: {
         class: `@startuml
 ' 类图示例
@@ -196,11 +215,50 @@ backend --> db
     };
   },
   methods: {
+    // 显示全屏预览
+    showFullscreen() {
+      if (this.diagramUrl) {
+        this.isFullscreen = true;
+        // 添加ESC键监听，方便用户按ESC退出全屏
+        document.addEventListener('keydown', this.handleEscKey);
+        
+        // 获取带有更高宽度参数的图片URL用于全屏显示
+        if (this.plantUmlCode) {
+          try {
+            const encoded = plantumlEncoder.encode(this.plantUmlCode);
+            // 使用SVG格式并明确设置为1920像素宽度
+            this.fullscreenImageUrl = `https://www.plantuml.com/plantuml/svg/${encoded}?width=1920`;
+            
+            // 预加载全屏图片
+            const img = new Image();
+            img.src = this.fullscreenImageUrl;
+          } catch (error) {
+            console.error('生成全屏图片时出错:', error);
+            this.fullscreenImageUrl = this.diagramUrl;
+          }
+        }
+      }
+    },
+    
+    // 关闭全屏预览
+    closeFullscreen() {
+      this.isFullscreen = false;
+      // 移除ESC键监听
+      document.removeEventListener('keydown', this.handleEscKey);
+    },
+    
+    // 处理ESC键退出全屏
+    handleEscKey(event) {
+      if (event.key === 'Escape' && this.isFullscreen) {
+        this.closeFullscreen();
+      }
+    },
     generateDiagram() {
       if (!this.plantUmlCode) return;
       
       try {
         const encoded = plantumlEncoder.encode(this.plantUmlCode);
+        // 使用高质量SVG格式，但不添加宽度参数（预览用）
         this.diagramUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
       } catch (error) {
         console.error('生成图表时出错:', error);
@@ -210,17 +268,50 @@ backend --> db
       if (!this.plantUmlCode) return;
       
       try {
-        const encoded = plantumlEncoder.encode(this.plantUmlCode);
-        const pngUrl = `https://www.plantuml.com/plantuml/png/${encoded}`;
+        // 显示下载中提示
+        this.isDownloading = true;
         
-        // 获取PNG图片数据
-        const response = await fetch(pngUrl);
-        const blob = await response.blob();
+        // 直接获取页面上的SVG图片元素
+        const svgElement = document.querySelector('.diagram-preview');
+        if (!svgElement) {
+          throw new Error('无法获取当前图表元素');
+        }
+        
+        // 创建一个Canvas元素
+        const canvas = document.createElement('canvas');
+        // 设置Canvas大小为1920像素宽
+        canvas.width = 1920;
+        // 根据SVG比例计算高度
+        const aspectRatio = svgElement.naturalHeight / svgElement.naturalWidth;
+        canvas.height = Math.round(1920 * aspectRatio) || 1080;
+        
+        const ctx = canvas.getContext('2d');
+        // 设置白色背景
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 创建Image对象
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        // 使用当前URL但添加时间戳防止缓存问题
+        img.src = this.diagramUrl + '?t=' + new Date().getTime();
+        
+        // 等待图片加载完成后绘制到Canvas
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            // 在Canvas上绘制图片
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve();
+          };
+          img.onerror = () => reject(new Error('图片加载失败'));
+        });
+        
+        // 从Canvas获取PNG数据
+        const dataUrl = canvas.toDataURL('image/png');
         
         // 创建下载链接
-        const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = downloadUrl;
+        link.href = dataUrl;
         link.download = 'plantuml-diagram.png';
         
         // 触发下载
@@ -228,10 +319,11 @@ backend --> db
         link.click();
         document.body.removeChild(link);
         
-        // 清理URL对象
-        window.URL.revokeObjectURL(downloadUrl);
+        this.isDownloading = false;
       } catch (error) {
         console.error('下载图表时出错:', error);
+        this.isDownloading = false;
+        alert('下载图表失败: ' + error.message);
       }
     },
     autoGenerate() {
@@ -251,6 +343,15 @@ backend --> db
   mounted() {
     // 初始化时显示空白状态
     this.generateDiagram();
+  },
+  beforeDestroy() {
+    // 确保在组件销毁时移除事件监听器
+    document.removeEventListener('keydown', this.handleEscKey);
+    
+    // 清除可能存在的定时器
+    if (this.generateTimeout) {
+      clearTimeout(this.generateTimeout);
+    }
   }
 };
 </script>
@@ -346,6 +447,12 @@ backend --> db
   width: 100%; /* 固定宽度为100% */
   height: auto; /* 高度自动适应 */
   display: block; /* 去除默认的内联显示间隙 */
+  cursor: pointer; /* 指示可点击 */
+  transition: transform 0.2s; /* 添加悬停效果 */
+}
+
+.diagram-preview:hover {
+  transform: scale(1.02); /* 轻微放大效果 */
 }
 
 .placeholder {
@@ -356,6 +463,66 @@ backend --> db
   color: #999;
   border: 2px dashed #ddd;
   border-radius: 4px;
+}
+
+/* 全屏预览样式 */
+.fullscreen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  cursor: pointer;
+}
+
+.fullscreen-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+}
+
+.fullscreen-image {
+  display: block;
+  max-width: 100%;
+  max-height: 90vh;
+  margin: 0 auto;
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+}
+
+.fullscreen-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  font-size: 30px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+}
+
+.fullscreen-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: white;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 /* 美化滚动条 */
