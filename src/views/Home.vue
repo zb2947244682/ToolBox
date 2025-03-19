@@ -1,8 +1,5 @@
 <template>
   <div class="home">
-    <h1 class="page-title">欢迎使用工具箱</h1>
-    <p class="description">这是一款集合多种实用工具的应用，帮助您提高工作效率</p>
-    
     <div class="tools-grid">
       <div 
         v-for="tool in tools" 
