@@ -68,65 +68,77 @@
       </div>
       
       <div class="settings-panel">
-        <div class="settings-group">
-          <h4>导出格式</h4>
-          <div class="format-buttons">
-            <button 
-              v-for="format in exportFormats" 
-              :key="format.value"
-              @click="selectedFormat = format.value" 
-              :class="['format-btn', selectedFormat === format.value ? 'format-btn-active' : '']"
-            >
-              {{ format.label }}
-            </button>
+        <div class="settings-section">
+          <div class="settings-row">
+            <div class="settings-group format-group">
+              <h4>导出格式</h4>
+              <div class="format-buttons">
+                <button 
+                  v-for="format in exportFormats" 
+                  :key="format.value"
+                  @click="selectedFormat = format.value" 
+                  :class="['format-btn', selectedFormat === format.value ? 'format-btn-active' : '']"
+                >
+                  {{ format.label }}
+                </button>
+              </div>
+            </div>
+            
+            <div class="settings-group quality-group">
+              <h4>图片质量</h4>
+              <div class="quality-slider">
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="100" 
+                  step="5"
+                  v-model.number="imageQuality" 
+                  @input="processImage"
+                >
+                <span>{{ imageQuality }}%</span>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div class="settings-group">
-          <h4>图片质量</h4>
-          <div class="quality-slider">
-            <input 
-              type="range" 
-              min="10" 
-              max="100" 
-              step="5"
-              v-model.number="imageQuality" 
-              @input="processImage"
-            >
-            <span>{{ imageQuality }}%</span>
-          </div>
-        </div>
 
-        <div class="settings-group">
-          <h4>图片尺寸调整</h4>
-          <div class="size-controls">
-            <div class="size-input-group">
-              <label>宽度 (px)</label>
-              <input 
-                type="number" 
-                v-model.number="outputWidth" 
-                min="1" 
-                @change="handleWidthChange"
-              >
+          <div class="settings-row size-row">
+            <div class="settings-group size-group">
+              <h4>图片尺寸调整</h4>
+              <div class="size-controls-row">
+                <div class="dimension-inputs">
+                  <div class="size-input-group">
+                    <label>宽度 (px)</label>
+                    <input 
+                      type="number" 
+                      v-model.number="outputWidth" 
+                      min="1" 
+                      @change="handleWidthChange"
+                    >
+                  </div>
+                  <div class="size-input-group">
+                    <label>高度 (px)</label>
+                    <input 
+                      type="number" 
+                      v-model.number="outputHeight" 
+                      min="1" 
+                      @change="handleHeightChange"
+                    >
+                  </div>
+                </div>
+                <div class="size-actions">
+                  <div class="aspect-ratio-toggle">
+                    <input 
+                      type="checkbox" 
+                      id="maintain-ratio" 
+                      v-model="maintainAspectRatio"
+                    >
+                    <label for="maintain-ratio">保持宽高比</label>
+                  </div>
+                  <button @click="resetDimensions" class="reset-btn">
+                    <i class="el-icon-refresh-right"></i> 重置尺寸
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="size-input-group">
-              <label>高度 (px)</label>
-              <input 
-                type="number" 
-                v-model.number="outputHeight" 
-                min="1" 
-                @change="handleHeightChange"
-              >
-            </div>
-            <div class="checkbox-group">
-              <input 
-                type="checkbox" 
-                id="maintain-ratio" 
-                v-model="maintainAspectRatio"
-              >
-              <label for="maintain-ratio">保持宽高比</label>
-            </div>
-            <button @click="resetDimensions" class="mini-btn">重置尺寸</button>
           </div>
         </div>
         
@@ -618,6 +630,20 @@ export default {
   position: absolute;
   top: 10px;
   right: 10px;
+  padding: 6px 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #67C23A;
+  border: 1px solid #c2e7b0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+}
+
+.paste-prompt .mini-btn:hover {
+  background-color: #67C23A;
+  color: white;
+  border-color: #67C23A;
 }
 
 .preview-section {
@@ -650,12 +676,30 @@ export default {
   margin: 20px 0;
 }
 
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-row {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
 .settings-group {
-  margin-bottom: 15px;
+  flex: 1;
 }
 
 .settings-group h4 {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.format-group, .quality-group {
+  flex: 1;
 }
 
 .format-buttons {
@@ -667,10 +711,13 @@ export default {
 .format-btn {
   padding: 8px 16px;
   border-radius: 4px;
-  border: 1px solid #ddd;
+  border: 1px solid #dcdfe6;
   background-color: #fff;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  min-width: 60px;
+  text-align: center;
 }
 
 .format-btn-active {
@@ -682,57 +729,117 @@ export default {
 .quality-slider {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
+  padding-top: 8px;
 }
 
 .quality-slider input {
   flex: 1;
-  height: 8px;
+  height: 6px;
+  cursor: pointer;
 }
 
-.size-controls {
+.quality-slider span {
+  min-width: 45px;
+  text-align: right;
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.size-controls-row {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 15px;
-  align-items: center;
+}
+
+.dimension-inputs {
+  display: flex;
+  gap: 15px;
+}
+
+.size-group {
+  width: 100%;
 }
 
 .size-input-group {
   display: flex;
   flex-direction: column;
-  min-width: 100px;
+  width: 120px;
 }
 
 .size-input-group label {
   margin-bottom: 5px;
   font-size: 0.9rem;
-  color: #666;
+  color: #606266;
 }
 
 .size-input-group input {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
   border-radius: 4px;
+  transition: all 0.3s;
 }
 
-.checkbox-group {
+.size-input-group input:focus {
+  outline: none;
+  border-color: #409EFF;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+.size-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-left: 10px;
+  gap: 10px;
 }
 
-.mini-btn {
-  padding: 6px 12px;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
+.aspect-ratio-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 39px; /* 与输入框高度一致 */
+}
+
+.aspect-ratio-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #409EFF;
+}
+
+.aspect-ratio-toggle label {
+  font-size: 0.95rem;
+  color: #606266;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.reset-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  height: 39px; /* 与输入框高度一致 */
+  background-color: #ecf5ff;
+  color: #409EFF;
+  border: 1px solid #d9ecff;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
-.mini-btn:hover {
-  background-color: #e0e0e0;
+.reset-btn:hover {
+  background-color: #409EFF;
+  color: white;
+  border-color: #409EFF;
+}
+
+.reset-btn i {
+  font-size: 14px;
 }
 
 .note {
