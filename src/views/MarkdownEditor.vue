@@ -14,6 +14,12 @@
         <button class="btn" @click="copyHtml" title="复制HTML内容">
           <span>复制HTML</span>
         </button>
+        <button class="btn" @click="exportImage" title="导出为PNG图片">
+          <span>导出图片</span>
+        </button>
+        <button class="btn" @click="copyImage" title="复制图片到剪贴板">
+          <span>复制图片</span>
+        </button>
       </div>
     </div>
     
@@ -33,12 +39,17 @@
         </div>
       </div>
       <div class="preview-section" ref="previewSection" @scroll="syncScroll('preview')">
-        <div class="preview-content" v-html="renderedContent"></div>
+        <div class="preview-content" ref="previewContent" v-html="renderedContent"></div>
       </div>
     </div>
     
     <div class="copy-message" v-if="copyMessage" :class="{ show: copyMessage }">
       {{ copyMessage }}
+    </div>
+    
+    <!-- 用于导出图片的隐藏容器 -->
+    <div class="image-export-container" ref="exportContainer" v-show="false">
+      <div class="preview-content export-content" ref="exportContent" v-html="renderedContent"></div>
     </div>
   </div>
 </template>
@@ -46,6 +57,7 @@
 <script>
 import { marked } from 'marked';
 import katex from 'katex';
+import * as htmlToImage from 'html-to-image';
 
 // 创建自定义的LaTeX扩展
 function createLatexExtension() {
@@ -284,6 +296,125 @@ export default {
             this.copyMessage = '';
           }, 3000);
         });
+    },
+    
+    // 导出图片功能
+    exportImage() {
+      // 从预览容器创建图片
+      const container = this.$refs.previewContent;
+      
+      // 如果内容为空，显示提示
+      if (!this.markdownContent.trim()) {
+        this.copyMessage = '内容为空，无法导出图片';
+        setTimeout(() => {
+          this.copyMessage = '';
+        }, 3000);
+        return;
+      }
+      
+      // 显示加载提示
+      this.copyMessage = '正在生成图片...';
+      
+      // 使用html-to-image生成图片
+      htmlToImage.toPng(container, {
+        quality: 0.95,
+        backgroundColor: '#ffffff',
+        style: {
+          padding: '20px',
+          boxSizing: 'border-box',
+          width: '100%',
+        }
+      })
+      .then(dataUrl => {
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = `markdown-${new Date().getTime()}.png`;
+        link.href = dataUrl;
+        link.click();
+        
+        // 显示成功消息
+        this.copyMessage = '图片已成功导出';
+        setTimeout(() => {
+          this.copyMessage = '';
+        }, 3000);
+      })
+      .catch(error => {
+        console.error('导出图片失败:', error);
+        this.copyMessage = '导出图片失败，请重试';
+        setTimeout(() => {
+          this.copyMessage = '';
+        }, 3000);
+      });
+    },
+    
+    // 复制图片到剪贴板
+    copyImage() {
+      // 从预览容器创建图片
+      const container = this.$refs.previewContent;
+      
+      // 如果内容为空，显示提示
+      if (!this.markdownContent.trim()) {
+        this.copyMessage = '内容为空，无法复制图片';
+        setTimeout(() => {
+          this.copyMessage = '';
+        }, 3000);
+        return;
+      }
+      
+      // 显示加载提示
+      this.copyMessage = '正在生成图片...';
+      
+      // 使用html-to-image生成Blob
+      htmlToImage.toBlob(container, {
+        quality: 0.95,
+        backgroundColor: '#ffffff',
+        style: {
+          padding: '20px',
+          boxSizing: 'border-box',
+          width: '100%',
+        }
+      })
+      .then(blob => {
+        // 使用Clipboard API复制图片
+        try {
+          // 检查浏览器是否支持写入图片到剪贴板
+          if (navigator.clipboard && navigator.clipboard.write) {
+            const item = new ClipboardItem({
+              'image/png': blob
+            });
+            
+            navigator.clipboard.write([item])
+              .then(() => {
+                this.copyMessage = '图片已复制到剪贴板';
+                setTimeout(() => {
+                  this.copyMessage = '';
+                }, 3000);
+              })
+              .catch(err => {
+                console.error('复制图片失败:', err);
+                this.copyMessage = '复制图片失败，请重试';
+                setTimeout(() => {
+                  this.copyMessage = '';
+                }, 3000);
+              });
+          } else {
+            throw new Error('浏览器不支持复制图片到剪贴板');
+          }
+        } catch (err) {
+          console.error('复制图片到剪贴板失败:', err);
+          this.copyMessage = '您的浏览器不支持复制图片到剪贴板';
+          setTimeout(() => {
+            this.copyMessage = '';
+          }, 3000);
+        }
+      })
+      .catch(error => {
+        console.error('生成图片失败:', error);
+        this.copyMessage = '生成图片失败，请重试';
+        setTimeout(() => {
+          this.copyMessage = '';
+        }, 3000);
+      });
     },
     
     syncScroll(source) {
@@ -580,5 +711,22 @@ export default {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 图片导出样式 */
+.image-export-container {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  background-color: white;
+  width: 800px; /* 固定宽度，可根据需要调整 */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.export-content {
+  background-color: white;
+  padding: 20px;
+  overflow: visible;
 }
 </style> 
