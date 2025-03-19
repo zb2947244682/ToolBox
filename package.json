@@ -22,6 +22,7 @@
     "marked": "^15.0.7",
     "marked-katex-extension": "^5.1.4",
     "mathjax": "^3.2.2",
+    "plantuml-encoder": "^1.4.0",
     "prettier": "^3.2.4",
     "vue": "^2.7.16",
     "vue-loader": "^15.11.1",

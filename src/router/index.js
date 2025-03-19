@@ -44,6 +44,11 @@ const routes = [
     path: '/image-to-ico',
     name: 'ImageToIco',
     component: () => import('../views/ImageToIco.vue')
+  },
+  {
+    path: '/plantuml-editor',
+    name: 'PlantUMLEditor',
+    component: () => import('../views/PlantUMLEditor.vue')
   }
 ];
 

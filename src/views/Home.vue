@@ -57,6 +57,11 @@ export default {
           name: 'PNG转ICO',
           path: '/image-to-ico',
           description: '将PNG图片转换为ICO图标文件，适合制作网站favicon图标'
+        },
+        {
+          name: 'PlantUML编辑器',
+          path: '/plantuml-editor',
+          description: '在线绘制UML图表，支持类图、时序图、用例图和活动图，实时预览'
         }
       ]
     };
