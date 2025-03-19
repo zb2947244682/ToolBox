@@ -17,39 +17,23 @@
       </div>
       <div class="split-view">
         <div class="editor-panel">
-          <textarea
-            v-model="plantUmlCode"
-            class="code-editor"
-            placeholder="在此输入PlantUML代码...
+          <textarea v-model="plantUmlCode" class="code-editor" placeholder="在此输入PlantUML代码...
 支持类图、时序图、用例图、活动图等
-选择上方的示例查看更多用法"
-            @input="autoGenerate"
-          ></textarea>
+选择上方的示例查看更多用法" @input="autoGenerate"></textarea>
         </div>
         <div class="preview-panel">
-          <img 
-            v-if="diagramUrl" 
-            :src="diagramUrl" 
-            alt="PlantUML图表" 
-            class="diagram-preview" 
-            @click="showFullscreen" 
-            title="点击全屏查看" 
-          />
-          <canvas 
-            v-if="showCanvas" 
-            ref="previewCanvas" 
-            style="display: none;"
-            class="diagram-preview" 
-            @click="showFullscreen" 
-            title="点击全屏查看"
-          ></canvas>
+          <img v-if="diagramUrl" :src="diagramUrl" alt="PlantUML图表" class="diagram-preview" @click="showFullscreen"
+            title="点击全屏查看" />
           <div v-else class="placeholder">
             图表预览区域
           </div>
         </div>
       </div>
     </div>
-    
+
+    <canvas v-if="showCanvas" ref="previewCanvas" style="display: none;" @click="showFullscreen"
+      title="点击全屏查看"></canvas>
+
     <!-- 全屏预览模态框 -->
     <div v-if="isFullscreen" class="fullscreen-modal" @click="closeFullscreen">
       <div class="fullscreen-content">
@@ -232,19 +216,19 @@ backend --> db
         this.isFullscreen = true;
         // 添加ESC键监听，方便用户按ESC退出全屏
         document.addEventListener('keydown', this.handleEscKey);
-        
+
         // 使用已经生成的Canvas数据
         this.fullscreenImageUrl = this.canvasDataUrl;
       }
     },
-    
+
     // 关闭全屏预览
     closeFullscreen() {
       this.isFullscreen = false;
       // 移除ESC键监听
       document.removeEventListener('keydown', this.handleEscKey);
     },
-    
+
     // 处理ESC键退出全屏
     handleEscKey(event) {
       if (event.key === 'Escape' && this.isFullscreen) {
@@ -257,34 +241,34 @@ backend --> db
         this.diagramUrl = '';
         return;
       }
-      
+
       try {
         const encoded = plantumlEncoder.encode(this.plantUmlCode);
         // 使用本地Docker的plantuml-server服务获取原始SVG
 
-        if(location.hostname !== 'localhost'){
+        if (location.hostname !== 'localhost') {
           this.rawSvgUrl = `/plantuml/svg/${encoded}`;
-        }else{
+        } else {
           this.rawSvgUrl = `https://www.plantuml.com/plantuml/svg/${encoded}`;
         }
-        
+
         // 创建一个Canvas元素
         const canvas = document.createElement('canvas');
         // 设置Canvas大小为1920像素宽
         canvas.width = 1920;
         // 初始高度，稍后会根据图像比例调整
         canvas.height = 1080;
-        
+
         const ctx = canvas.getContext('2d');
         // 设置白色背景
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         // 创建Image对象
         const img = new Image();
         img.crossOrigin = 'Anonymous';
         img.src = this.rawSvgUrl + '?t=' + new Date().getTime();
-        
+
         // 等待图片加载完成后绘制到Canvas
         await new Promise((resolve, reject) => {
           img.onload = () => {
@@ -300,12 +284,12 @@ backend --> db
           };
           img.onerror = () => reject(new Error('图片加载失败'));
         });
-        
+
         // 从Canvas获取PNG数据
         this.canvasDataUrl = canvas.toDataURL('image/png');
         this.diagramUrl = this.canvasDataUrl;
         this.showCanvas = true;
-        
+
         // 更新预览Canvas（如果已渲染到DOM）
         this.$nextTick(() => {
           const previewCanvas = this.$refs.previewCanvas;
@@ -316,7 +300,7 @@ backend --> db
             const aspectRatio = canvas.height / canvas.width;
             previewCanvas.width = displayWidth;
             previewCanvas.height = displayWidth * aspectRatio;
-            
+
             // 创建临时图像复制到预览Canvas
             const tempImg = new Image();
             tempImg.onload = () => {
@@ -334,30 +318,30 @@ backend --> db
     },
     async downloadDiagram() {
       if (!this.plantUmlCode) return;
-      
+
       try {
         // 显示下载中提示
         this.isDownloading = true;
-        
+
         // 如果已经有生成的Canvas数据，直接使用
         if (this.canvasDataUrl) {
           // 创建下载链接
           const link = document.createElement('a');
           link.href = this.canvasDataUrl;
           link.download = 'plantuml-diagram.png';
-          
+
           // 触发下载
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          
+
           this.isDownloading = false;
           return;
         }
-        
+
         // 如果没有生成的Canvas数据，先调用generateDiagram生成
         await this.generateDiagram();
-        
+
         // 现在应该有canvasDataUrl了，再次尝试下载
         if (this.canvasDataUrl) {
           const link = document.createElement('a');
@@ -369,7 +353,7 @@ backend --> db
         } else {
           throw new Error('无法生成图表数据');
         }
-        
+
         this.isDownloading = false;
       } catch (error) {
         console.error('下载图表时出错:', error);
@@ -398,7 +382,7 @@ backend --> db
   beforeDestroy() {
     // 确保在组件销毁时移除事件监听器
     document.removeEventListener('keydown', this.handleEscKey);
-    
+
     // 清除可能存在的定时器
     if (this.generateTimeout) {
       clearTimeout(this.generateTimeout);
@@ -413,7 +397,8 @@ backend --> db
   padding: 20px;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 防止出现整体滚动条 */
+  overflow: hidden;
+  /* 防止出现整体滚动条 */
   position: relative;
 }
 
@@ -424,7 +409,8 @@ backend --> db
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* 防止容器出现滚动条 */
+  overflow: hidden;
+  /* 防止容器出现滚动条 */
 }
 
 .toolbar {
@@ -432,7 +418,8 @@ backend --> db
   border-bottom: 1px solid #eee;
   display: flex;
   gap: 10px;
-  flex-shrink: 0; /* 防止工具栏被压缩 */
+  flex-shrink: 0;
+  /* 防止工具栏被压缩 */
 }
 
 .example-select {
@@ -458,13 +445,16 @@ backend --> db
 .split-view {
   display: flex;
   flex: 1;
-  overflow: hidden; /* 防止分割视图出现滚动条 */
+  overflow: hidden;
+  /* 防止分割视图出现滚动条 */
 }
 
-.editor-panel, .preview-panel {
+.editor-panel,
+.preview-panel {
   flex: 1;
   padding: 20px;
-  overflow: hidden; /* 改为hidden，避免多余的滚动条 */
+  overflow: hidden;
+  /* 改为hidden，防止出现滚动条 */
   display: flex;
   flex-direction: column;
 }
@@ -481,33 +471,48 @@ backend --> db
   padding: 10px;
   font-family: monospace;
   resize: none;
-  overflow-y: auto; /* 只在编辑器区域显示垂直滚动条 */
-  overflow-x: hidden; /* 隐藏水平滚动条 */
+  overflow-y: auto;
+  /* 只在编辑器区域显示垂直滚动条 */
+  overflow-x: hidden;
+  /* 隐藏水平滚动条 */
 }
 
 .preview-panel {
   flex: 1;
   padding: 20px;
-  overflow-y: auto; /* 只在预览区域显示垂直滚动条 */
-  overflow-x: hidden; /* 隐藏水平滚动条 */
+  overflow: hidden;
+  /* 改为hidden，防止出现滚动条 */
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  /* 垂直居中 */
+  align-items: center;
+  /* 水平居中 */
 }
 
 .diagram-preview {
-  width: 100%; /* 固定宽度为100% */
-  height: auto; /* 高度自动适应 */
-  display: block; /* 去除默认的内联显示间隙 */
-  cursor: pointer; /* 指示可点击 */
-  transition: transform 0.2s; /* 添加悬停效果 */
+  max-width: 100%;
+  /* 最大宽度为父容器的100% */
+  max-height: 100%;
+  /* 最大高度为父容器的100% */
+  object-fit: contain;
+  /* 确保图像在容器内完全可见 */
+  display: block;
+  /* 去除默认的内联显示间隙 */
+  cursor: pointer;
+  /* 指示可点击 */
+  transition: transform 0.2s;
+  /* 添加悬停效果 */
 }
 
 .diagram-preview:hover {
-  transform: scale(1.02); /* 轻微放大效果 */
+  transform: scale(1.02);
+  /* 轻微放大效果 */
 }
 
 .placeholder {
   height: 100%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -594,4 +599,12 @@ backend --> db
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
-</style> 
+
+
+
+/* 确保图表容器充满空间但不溢出 */
+.preview-panel>* {
+  max-height: 100%;
+  overflow: hidden;
+}
+</style>
