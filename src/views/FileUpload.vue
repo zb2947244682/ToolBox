@@ -36,6 +36,10 @@
             <input v-model="config.region" type="text" placeholder="例如: oss-cn-shanghai" autocomplete="off">
           </div>
           <div class="form-group">
+            <label>CDN域名:</label>
+            <input v-model="config.cdnDomain" type="text" placeholder="例如: https://cdn.example.com" autocomplete="off">
+          </div>
+          <div class="form-group">
             <label>上传路径:</label>
             <input v-model="uploadPath" type="text" placeholder="例如: /images" autocomplete="off">
           </div>
@@ -158,6 +162,7 @@ export default {
         accessKeySecret: localStorage.getItem('ossAccessKeySecret') || '',
         bucket: localStorage.getItem('ossBucket') || '',
         region: localStorage.getItem('ossRegion') || '',
+        cdnDomain: localStorage.getItem('ossCdnDomain') || '',
         secure: true
       },
       uploadPath: localStorage.getItem('ossUploadPath') || '/images',
@@ -186,6 +191,9 @@ export default {
     'config.region'(val) {
       localStorage.setItem('ossRegion', val)
     },
+    'config.cdnDomain'(val) {
+      localStorage.setItem('ossCdnDomain', val)
+    },
     uploadPath(val) {
       localStorage.setItem('ossUploadPath', val)
     }
@@ -212,6 +220,7 @@ export default {
       localStorage.setItem('ossAccessKeySecret', this.config.accessKeySecret)
       localStorage.setItem('ossBucket', this.config.bucket)
       localStorage.setItem('ossRegion', this.config.region)
+      localStorage.setItem('ossCdnDomain', this.config.cdnDomain)
       localStorage.setItem('ossUploadPath', this.uploadPath)
       this.showMessage('配置已保存', 'success')
       this.showConfig = false
@@ -254,9 +263,10 @@ export default {
         for (const file of this.files) {
           const fileName = `${this.uploadPath}/${file.name}`
           const result = await this.client.put(fileName, file)
+          const url = this.getProcessedUrl(result.url)
           this.uploadedFiles.unshift({
             name: file.name,
-            url: result.url
+            url: url
           })
         }
         this.files = []
@@ -265,6 +275,18 @@ export default {
       } finally {
         this.uploading = false
       }
+    },
+    getProcessedUrl(originalUrl) {
+      if (this.config.cdnDomain) {
+        try {
+          const url = new URL(originalUrl)
+          const path = url.pathname + url.search + url.hash
+          return this.config.cdnDomain.replace(/\/$/, '') + path
+        } catch (e) {
+          return originalUrl
+        }
+      }
+      return originalUrl
     },
     copyUrl(url) {
       navigator.clipboard.writeText(url).then(() => {
