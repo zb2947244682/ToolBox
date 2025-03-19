@@ -23,30 +23,15 @@
           <img :src="originalImageUrl" alt="原始图片" class="preview-image">
           <p>{{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</p>
         </div>
-        <div class="ico-preview">
-          <h4>ICO预览 (64x64)</h4>
-          <img v-if="icoPreviewUrl" :src="icoPreviewUrl" alt="ICO预览" class="preview-image ico">
-          <div v-else class="preview-placeholder">
-            <p>转换后的ICO将显示在这里</p>
-          </div>
-        </div>
       </div>
       
       <div class="action-buttons">
         <button @click="clearFile" class="clear-btn">
           清空
         </button>
-        <button @click="convertToIco" class="convert-btn" :disabled="converting || !selectedFile">
-          {{ converting ? '转换中...' : '转换为ICO' }}
+        <button @click="convertAndDownload" class="convert-btn" :disabled="converting || !selectedFile">
+          {{ converting ? '转换中...' : '转换并下载' }}
         </button>
-        <a 
-          v-if="icoDataUrl" 
-          :href="icoDataUrl" 
-          download="icon.ico" 
-          class="download-btn"
-        >
-          下载ICO文件
-        </a>
       </div>
     </div>
 
@@ -54,6 +39,12 @@
     <div v-if="message.show" :class="['message-popup', `message-${message.type}`]">
       <span>{{ message.text }}</span>
     </div>
+    
+    <!-- 隐藏的下载链接 -->
+    <a 
+      ref="downloadLink" 
+      style="display: none;"
+    ></a>
   </div>
 </template>
 
@@ -64,8 +55,6 @@ export default {
     return {
       selectedFile: null,
       originalImageUrl: null,
-      icoPreviewUrl: null,
-      icoDataUrl: null,
       converting: false,
       message: {
         show: false,
@@ -99,17 +88,13 @@ export default {
       
       this.selectedFile = file;
       this.originalImageUrl = URL.createObjectURL(file);
-      this.icoPreviewUrl = null;
-      this.icoDataUrl = null;
     },
     clearFile() {
       this.selectedFile = null;
       this.originalImageUrl = null;
-      this.icoPreviewUrl = null;
-      this.icoDataUrl = null;
       this.$refs.fileInput.value = '';
     },
-    convertToIco() {
+    convertAndDownload() {
       if (!this.selectedFile) return;
       
       this.converting = true;
@@ -128,17 +113,26 @@ export default {
         // 在画布上绘制调整大小的图像
         ctx.drawImage(img, 0, 0, 64, 64);
         
-        // 创建预览URL用于显示
-        this.icoPreviewUrl = canvas.toDataURL('image/png');
-        
         // 将PNG转换为标准ICO格式
         this.createIcoFile(canvas)
           .then(icoData => {
             // 创建ICO文件的数据URL
             const blob = new Blob([icoData], { type: 'image/x-icon' });
-            this.icoDataUrl = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
+            
+            // 设置下载链接并触发下载
+            const downloadLink = this.$refs.downloadLink;
+            downloadLink.href = url;
+            downloadLink.download = this.getDownloadFileName();
+            downloadLink.click();
+            
+            // 释放URL对象
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+            }, 100);
+            
             this.converting = false;
-            this.showMessage('转换成功！点击下载按钮保存ICO文件', 'success');
+            this.showMessage('转换成功！', 'success');
           })
           .catch(err => {
             console.error('转换失败:', err);
@@ -154,6 +148,10 @@ export default {
       
       // 从文件创建URL并加载图片
       img.src = this.originalImageUrl;
+    },
+    getDownloadFileName() {
+      // 从原始文件名获取基本名称并添加.ico扩展名
+      return 'icon.ico';
     },
     createIcoFile(canvas) {
       return new Promise((resolve) => {
@@ -334,7 +332,7 @@ export default {
   flex-wrap: wrap;
 }
 
-.original-image, .ico-preview {
+.original-image {
   text-align: center;
   padding: 15px;
   border: 1px solid #eee;
@@ -348,29 +346,6 @@ export default {
   max-height: 200px;
   object-fit: contain;
   margin-bottom: 10px;
-}
-
-.preview-image.ico {
-  image-rendering: pixelated;
-  border: 1px solid #ddd;
-}
-
-.preview-placeholder {
-  width: 64px;
-  height: 64px;
-  border: 1px solid #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  background-color: #f5f5f5;
-}
-
-.preview-placeholder p {
-  font-size: 0.7rem;
-  padding: 5px;
-  text-align: center;
-  color: #999;
 }
 
 .action-buttons {
@@ -418,15 +393,6 @@ export default {
   cursor: not-allowed;
 }
 
-.download-btn {
-  background-color: #3498db;
-  color: white;
-}
-
-.download-btn:hover {
-  background-color: #2980b9;
-}
-
 .message-popup {
   position: fixed;
   bottom: 20px;
@@ -463,7 +429,7 @@ export default {
     align-items: center;
   }
   
-  .original-image, .ico-preview {
+  .original-image {
     margin-bottom: 20px;
     width: 100%;
   }
