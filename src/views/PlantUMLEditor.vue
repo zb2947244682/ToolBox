@@ -676,16 +676,41 @@ dbms --> db_service : 实现
         code = code.replace(/skinparam\s+handwritten\s+true\n/g, '');
         code = code.replace(/!theme\s+\w+\n/g, '');
         
-        // 在@startuml后添加新主题
+        // 获取新主题代码
         const themeCode = this.themes[this.selectedTheme] || '';
-        if (themeCode && code.includes('@startuml')) {
-          // 在@startuml后添加主题，但避免重复添加换行符
-          if (code.includes('@startuml\n')) {
-            // 已经有换行符，直接在换行符后添加主题
-            code = code.replace('@startuml\n', '@startuml\n' + themeCode);
-          } else {
-            // 没有换行符，添加带换行符的主题
-            code = code.replace('@startuml', '@startuml\n' + themeCode);
+        
+        if (themeCode) {
+          // 支持所有类型的PlantUML开始标记
+          const startTags = [
+            '@startuml', 
+            '@startmindmap', 
+            '@startgantt', 
+            '@startwbs', 
+            '@startsalt', 
+            '@startjson',
+            '@startnwdiag'
+          ];
+          
+          // 查找文档中的开始标记
+          let tagFound = false;
+          for (const tag of startTags) {
+            if (code.includes(tag)) {
+              tagFound = true;
+              // 在开始标记后添加主题，但避免重复添加换行符
+              if (code.includes(tag + '\n')) {
+                // 已经有换行符，直接在换行符后添加主题
+                code = code.replace(tag + '\n', tag + '\n' + themeCode);
+              } else {
+                // 没有换行符，添加带换行符的主题
+                code = code.replace(tag, tag + '\n' + themeCode);
+              }
+              break; // 找到第一个标记后就停止处理
+            }
+          }
+          
+          // 如果没有找到任何开始标记但有主题，在代码开头添加主题代码
+          if (!tagFound && themeCode) {
+            code = themeCode + code;
           }
         }
         
