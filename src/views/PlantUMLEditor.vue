@@ -4,23 +4,33 @@
       <div class="toolbar">
         <select v-model="selectedExample" class="example-select" @change="loadExample">
           <option value="">选择示例...</option>
-          <option value="class">类图示例</option>
-          <option value="sequence">时序图示例</option>
-          <option value="usecase">用例图示例</option>
-          <option value="activity">活动图示例</option>
-          <option value="component">组件图示例</option>
-          <option value="state">状态图示例</option>
-          <option value="object">对象图示例</option>
-          <option value="deployment">部署图示例</option>
-          <option value="er">ER数据关系图</option>
-          <option value="mindmap">思维导图</option>
-          <option value="gantt">甘特图</option>
-          <option value="wbs">工作分解结构图</option>
-          <option value="timing">时序时间图</option>
-          <option value="network">网络图</option>
-          <option value="archimate">ArchiMate架构图</option>
-          <option value="salt">UI界面原型</option>
-          <option value="json">JSON数据图</option>
+          <optgroup label="结构图">
+            <option value="class">类图示例</option>
+            <option value="object">对象图示例</option>
+            <option value="component">组件图示例</option>
+            <option value="deployment">部署图示例</option>
+            <option value="er">ER数据关系图</option>
+          </optgroup>
+          <optgroup label="行为图">
+            <option value="sequence">时序图示例</option>
+            <option value="activity">活动图示例</option>
+            <option value="state">状态图示例</option>
+            <option value="usecase">用例图示例</option>
+            <option value="timing">时序时间图</option>
+          </optgroup>
+          <optgroup label="架构图">
+            <option value="archimate">ArchiMate架构图</option>
+            <option value="network">网络图</option>
+          </optgroup>
+          <optgroup label="规划图">
+            <option value="gantt">甘特图</option>
+            <option value="wbs">工作分解结构图</option>
+            <option value="mindmap">思维导图</option>
+          </optgroup>
+          <optgroup label="其他">
+            <option value="salt">UI界面原型</option>
+            <option value="json">JSON数据图</option>
+          </optgroup>
         </select>
         <select v-model="selectedTheme" class="theme-select" @change="applyTheme">
           <option value="">默认样式</option>
