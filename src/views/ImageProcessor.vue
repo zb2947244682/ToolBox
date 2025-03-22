@@ -591,7 +591,7 @@ export default {
 .drop-zone {
   border: 2px dashed #ccc;
   border-radius: 8px;
-  padding: 40px;
+  padding: 140px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;

@@ -498,7 +498,7 @@ export default {
 }
 
 .drop-zone {
-  padding: 40px 0;
+  padding: 140px 0;
 }
 
 .drop-zone i {
