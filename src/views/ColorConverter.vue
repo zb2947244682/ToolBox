@@ -83,6 +83,8 @@
         ></div>
       </div>
     </div>
+
+    <div class="copy-message" v-if="showCopyMessage">{{ copyMessage }}</div>
   </div>
 </template>
 
@@ -104,7 +106,9 @@ export default {
       },
       previewColor: '#42b983',
       colorHistory: [],
-      lastUpdatedFormat: 'hex' // 跟踪上次更新的颜色格式
+      lastUpdatedFormat: 'hex', // 跟踪上次更新的颜色格式
+      copyMessage: '', // 复制提示消息
+      showCopyMessage: false // 控制提示显示状态
     };
   },
   watch: {
@@ -318,10 +322,22 @@ export default {
     copyToClipboard(text) {
       navigator.clipboard.writeText(text)
         .then(() => {
-          alert('已复制到剪贴板');
+          this.copyMessage = '已复制到剪贴板';
+          this.showCopyMessage = true;
+          
+          // 2秒后隐藏提示
+          setTimeout(() => {
+            this.showCopyMessage = false;
+          }, 2000);
         })
         .catch(err => {
           console.error('复制失败:', err);
+          this.copyMessage = '复制失败';
+          this.showCopyMessage = true;
+          
+          setTimeout(() => {
+            this.showCopyMessage = false;
+          }, 2000);
         });
     },
     addToHistory(color) {
@@ -485,6 +501,24 @@ input[type="range"] {
 
 .color-chip:hover {
   transform: scale(1.1);
+}
+
+.copy-message {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: #42b983;
+  color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
