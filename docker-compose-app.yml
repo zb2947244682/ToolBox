@@ -1,9 +1,9 @@
 services:
-  app:
+  web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: toolbox
+    container_name: web
     ports:
       - "8585:80"
     volumes:
