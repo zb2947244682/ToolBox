@@ -43,9 +43,60 @@
             <label>上传路径:</label>
             <input v-model="editUploadPath" type="text" placeholder="例如: /images" autocomplete="off">
           </div>
+          <!-- 导入导出配置按钮组 -->
+          <div class="import-export-config">
+            <div class="import-export-title">导入/导出配置</div>
+            <div class="import-export-buttons">
+              <div class="button-group export-buttons">
+                <button @click="downloadConfigFile" class="config-btn export-btn">
+                  导出到文件
+                </button>
+                <button @click="copyExportJson" class="config-btn export-btn">
+                  导出到剪贴板
+                </button>
+              </div>
+              <div class="button-group import-buttons">
+                <div class="config-btn import-btn file-upload-btn" @click="triggerConfigFileInput">
+                  从文件导入
+                  <input
+                    type="file"
+                    ref="configFileInput"
+                    accept=".json"
+                    @change="handleConfigFile"
+                    style="display: none"
+                  >
+                </div>
+                <button @click="showImportDialog = true" class="config-btn import-btn">
+                  从剪贴板导入
+                </button>
+              </div>
+            </div>
+          </div>
           <div class="modal-footer">
             <button @click="closeConfig" class="cancel-btn">取消</button>
             <button @click="saveConfig" class="save-btn">保存配置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 替换导入配置弹窗，简化为单一用途 -->
+    <div v-if="showImportDialog" class="import-modal" @keyup.esc="closeImportDialog">
+      <div class="import-modal-content">
+        <div class="import-modal-header">
+          <h2>从剪贴板导入配置</h2>
+          <button @click="closeImportDialog" class="close-btn">关闭</button>
+        </div>
+        <div class="import-panel">
+          <textarea 
+            v-model="importJsonContent" 
+            placeholder="请粘贴OSS配置的JSON内容"
+            class="json-textarea">
+          </textarea>
+          
+          <div class="import-modal-footer">
+            <button @click="closeImportDialog" class="cancel-btn">取消</button>
+            <button @click="importConfig" class="import-confirm-btn">确认导入</button>
           </div>
         </div>
       </div>
@@ -184,7 +235,9 @@ export default {
         text: '',
         type: 'info',
         timer: null
-      }
+      },
+      showImportDialog: false,
+      importJsonContent: ''
     }
   },
   watch: {
@@ -366,6 +419,155 @@ export default {
         document.body.removeChild(textarea)
       })
     },
+    downloadConfigFile() {
+      try {
+        // 准备导出的配置数据
+        const configToExport = {
+          accessKeyId: this.config.accessKeyId,
+          accessKeySecret: this.config.accessKeySecret,
+          bucket: this.config.bucket,
+          region: this.config.region,
+          cdnDomain: this.config.cdnDomain,
+          uploadPath: this.uploadPath
+        }
+        // 将配置对象转为JSON字符串
+        const exportJsonContent = JSON.stringify(configToExport, null, 2)
+        
+        // 创建Blob对象
+        const blob = new Blob([exportJsonContent], { type: 'application/json' })
+        // 创建临时URL
+        const url = URL.createObjectURL(blob)
+        // 创建下载链接
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'oss-config.json'
+        document.body.appendChild(link)
+        link.click()
+        // 清理
+        setTimeout(() => {
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+        }, 100)
+        this.showMessage('配置文件已下载', 'success')
+      } catch (error) {
+        this.showMessage('下载配置文件失败：' + error.message, 'error')
+      }
+    },
+    copyExportJson() {
+      try {
+        // 准备导出的配置数据
+        const configToExport = {
+          accessKeyId: this.config.accessKeyId,
+          accessKeySecret: this.config.accessKeySecret,
+          bucket: this.config.bucket,
+          region: this.config.region,
+          cdnDomain: this.config.cdnDomain,
+          uploadPath: this.uploadPath
+        }
+        // 将配置对象转为JSON字符串
+        const exportJsonContent = JSON.stringify(configToExport, null, 2)
+        
+        navigator.clipboard.writeText(exportJsonContent).then(() => {
+          this.showMessage('配置JSON已复制到剪贴板', 'success')
+        }).catch(() => {
+          // 如果剪贴板API不可用，使用传统方法
+          const textarea = document.createElement('textarea')
+          textarea.value = exportJsonContent
+          document.body.appendChild(textarea)
+          textarea.select()
+          try {
+            document.execCommand('copy')
+            this.showMessage('配置JSON已复制到剪贴板', 'success')
+          } catch (err) {
+            this.showMessage('复制失败，请手动复制', 'error')
+          }
+          document.body.removeChild(textarea)
+        })
+      } catch (error) {
+        this.showMessage('导出配置失败：' + error.message, 'error')
+      }
+    },
+    triggerConfigFileInput() {
+      this.$refs.configFileInput.click()
+    },
+    handleConfigFile(e) {
+      const file = e.target.files[0]
+      if (!file) return
+      
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const content = e.target.result
+          // 尝试解析JSON
+          const importedConfig = JSON.parse(content)
+          // 验证必要的字段
+          if (!importedConfig.accessKeyId || !importedConfig.bucket || !importedConfig.region) {
+            this.showMessage('配置文件缺少必要的字段', 'error')
+            return
+          }
+          
+          // 应用导入的配置
+          this.editConfig = {
+            accessKeyId: importedConfig.accessKeyId || '',
+            accessKeySecret: importedConfig.accessKeySecret || '',
+            bucket: importedConfig.bucket || '',
+            region: importedConfig.region || '',
+            cdnDomain: importedConfig.cdnDomain || '',
+            secure: true
+          }
+          
+          if (importedConfig.uploadPath) {
+            this.editUploadPath = importedConfig.uploadPath
+          }
+          
+          this.showMessage('配置已成功导入', 'success')
+        } catch (error) {
+          this.showMessage('无效的配置文件格式', 'error')
+        }
+      }
+      reader.readAsText(file)
+    },
+    importConfig() {
+      try {
+        // 如果没有内容可导入
+        if (!this.importJsonContent) {
+          this.showMessage('请输入有效的配置JSON', 'warning')
+          return
+        }
+        
+        // 解析JSON
+        const importedConfig = JSON.parse(this.importJsonContent)
+        
+        // 验证必要的字段
+        if (!importedConfig.accessKeyId || !importedConfig.bucket || !importedConfig.region) {
+          this.showMessage('配置文件缺少必要的字段', 'error')
+          return
+        }
+        
+        // 应用导入的配置
+        this.editConfig = {
+          accessKeyId: importedConfig.accessKeyId || '',
+          accessKeySecret: importedConfig.accessKeySecret || '',
+          bucket: importedConfig.bucket || '',
+          region: importedConfig.region || '',
+          cdnDomain: importedConfig.cdnDomain || '',
+          secure: true
+        }
+        
+        if (importedConfig.uploadPath) {
+          this.editUploadPath = importedConfig.uploadPath
+        }
+        
+        this.showMessage('配置已成功导入', 'success')
+        this.closeImportDialog()
+      } catch (error) {
+        this.showMessage('导入配置失败：' + error.message, 'error')
+      }
+    },
+    closeImportDialog() {
+      this.showImportDialog = false
+      this.importJsonContent = ''
+    }
   },
   mounted() {
     // 监听ESC键
@@ -883,5 +1085,166 @@ button:disabled {
   background-color: #fef0f0;
   border-color: #fde2e2;
   color: #f56c6c;
+}
+
+/* 导入导出按钮 */
+.import-export-config {
+  margin-top: 25px;
+  margin-bottom: 20px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #ebeef5;
+}
+
+.import-export-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #409eff;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 8px;
+}
+
+.import-export-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.config-btn {
+  flex: 1;
+  padding: 8px 15px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+}
+
+.export-btn {
+  background: #67c23a;
+  color: white;
+}
+
+.export-btn:hover {
+  background: #85ce61;
+}
+
+.import-btn {
+  background: #409eff;
+  color: white;
+}
+
+.import-btn:hover {
+  background: #66b1ff;
+}
+
+.file-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* 导入对话框样式 */
+.import-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.import-modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  overflow-y: auto;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+}
+
+.import-modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #ebeef5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+}
+
+.import-modal-header h2 {
+  font-size: 18px;
+  margin: 0;
+  color: #303133;
+}
+
+.import-panel {
+  padding: 20px;
+}
+
+.json-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: monospace;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.import-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cancel-btn {
+  background: #909399;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancel-btn:hover {
+  background: #a6a9ad;
+}
+
+.import-confirm-btn {
+  background: #409eff;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.import-confirm-btn:hover {
+  background: #66b1ff;
 }
 </style> 
