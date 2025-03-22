@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "webpack serve --open",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production --progress"
   },
   "keywords": [],
   "author": "",
@@ -23,7 +23,6 @@
     "katex": "^0.16.21",
     "marked": "^15.0.7",
     "marked-katex-extension": "^5.1.4",
-    "mathjax": "^3.2.2",
     "plantuml-encoder": "^1.4.0",
     "prettier": "^3.2.4",
     "vue": "^2.7.16",

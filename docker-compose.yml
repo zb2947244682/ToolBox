@@ -11,10 +11,23 @@ services:
     restart: unless-stopped
     depends_on:
       - plantuml
-      
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1g"
+        reservations:
+          cpus: "0.5"
+          memory: "512m"
+
   plantuml:
     image: plantuml/plantuml-server:jetty
     container_name: plantuml-server
     restart: unless-stopped
     environment:
       - PLANTUML_LIMIT_SIZE=8192
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512m"
