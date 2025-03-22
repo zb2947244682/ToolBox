@@ -87,7 +87,7 @@ export default {
 }
 
 .tab {
-  width: 120px;
+  width: 150px;
   padding: 0 10px;
   height: 40px;
   display: flex;
@@ -130,6 +130,10 @@ export default {
     padding: 10px;
     flex-direction: column;
     align-items: flex-start;
+    height: auto;
+    min-height: auto;
+    position: relative;
+    z-index: 100;
   }
   
   .logo {
@@ -141,14 +145,52 @@ export default {
   .nav-tabs {
     width: 100%;
     padding: 0;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 5px;
+    flex-wrap: nowrap;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .nav-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
   }
   
   .tab {
-    width: 110px;
+    width: auto;
+    min-width: 110px;
     height: 36px;
     font-size: 0.85rem;
     margin-bottom: 5px;
-    padding: 0 5px;
+    padding: 0 10px;
+    flex-shrink: 0;
+  }
+  
+  .app-content {
+    padding: 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 8px;
+  }
+  
+  .logo {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+  
+  .tab {
+    min-width: 100px;
+    height: 32px;
+    font-size: 0.8rem;
+    padding: 0 8px;
   }
 }
 </style> 
