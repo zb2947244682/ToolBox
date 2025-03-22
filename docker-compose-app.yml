@@ -1,9 +1,10 @@
+project_name: toolbox
 services:
-  website:
+  ui:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: website
+    container_name: ui
     ports:
       - "8585:80"
     volumes:

@@ -1,7 +1,8 @@
+project_name: plantuml
 services:
-  plantuml:
+  server:
     image: plantuml/plantuml-server:jetty
-    container_name: plantuml
+    container_name: server
     ports:
       - "5996:8080"  # 将宿主机的 8080 端口映射到容器的 8080 端口
     restart: unless-stopped
