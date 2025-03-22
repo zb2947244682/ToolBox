@@ -11,9 +11,9 @@ module.exports = (env, argv) => {
     entry: './src/main.js',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: isProduction ? '[name].[contenthash].js' : 'bundle.js', // 生产环境使用 hash 优化缓存
+      filename: isProduction ? '[name].[contenthash].js' : 'bundle.js',
       publicPath: '/',
-      clean: isProduction, // 生产模式下清理旧文件
+      clean: isProduction,
     },
     module: {
       rules: [
@@ -26,7 +26,7 @@ module.exports = (env, argv) => {
           loader: 'babel-loader',
           exclude: /node_modules/,
           options: {
-            cacheDirectory: true, // 启用 Babel 缓存，加快重复构建
+            cacheDirectory: true,
           },
         },
         {
@@ -69,12 +69,11 @@ module.exports = (env, argv) => {
       extensions: ['.js', '.vue', '.json'],
     },
     optimization: {
-      // 仅在生产模式下启用优化
-      minimize: isProduction,
+      minimize: false, // 禁用压缩，移除 TerserPlugin
       splitChunks: isProduction
         ? {
-            chunks: 'all', // 代码分割，减少单文件体积
-            maxInitialRequests: 3, // 限制并行请求数
+            chunks: 'all',
+            maxInitialRequests: 3,
             cacheGroups: {
               vendors: {
                 test: /[\\/]node_modules[\\/]/,
@@ -90,8 +89,8 @@ module.exports = (env, argv) => {
         : false,
     },
     performance: {
-      maxEntrypointSize: 512000, // 限制入口文件大小（512KB）
-      maxAssetSize: 512000, // 限制单个资源大小（512KB）
+      maxEntrypointSize: 512000,
+      maxAssetSize: 512000,
     },
   };
 };
