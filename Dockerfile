@@ -1,5 +1,5 @@
 # 构建阶段
-FROM node:22.14.0-slim AS build-stage
+FROM node:22.14.0-alpine AS build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
