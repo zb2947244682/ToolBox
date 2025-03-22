@@ -12,6 +12,15 @@
           <option value="state">状态图示例</option>
           <option value="object">对象图示例</option>
           <option value="deployment">部署图示例</option>
+          <option value="er">ER数据关系图</option>
+          <option value="mindmap">思维导图</option>
+          <option value="gantt">甘特图</option>
+          <option value="wbs">工作分解结构图</option>
+          <option value="timing">时序时间图</option>
+          <option value="network">网络图</option>
+          <option value="archimate">ArchiMate架构图</option>
+          <option value="salt">UI界面原型</option>
+          <option value="json">JSON数据图</option>
         </select>
         <select v-model="selectedTheme" class="theme-select" @change="applyTheme">
           <option value="">默认样式</option>
@@ -226,7 +235,231 @@ cloud "AWS Cloud" {
 
 frontend --> backend
 backend --> db
-@enduml`
+@enduml`,
+        er: `@startuml
+' ER图示例
+entity "用户" as user {
+  * 用户ID : number <<PK>>
+  --
+  * 用户名 : string
+  * 邮箱 : string
+  创建时间 : datetime
+}
+
+entity "订单" as order {
+  * 订单ID : number <<PK>>
+  --
+  * 用户ID : number <<FK>>
+  订单金额 : decimal
+  下单时间 : datetime
+  状态 : string
+}
+
+entity "商品" as product {
+  * 商品ID : number <<PK>>
+  --
+  商品名称 : string
+  价格 : decimal
+  库存 : number
+}
+
+entity "订单项" as orderItem {
+  * 项ID : number <<PK>>
+  --
+  * 订单ID : number <<FK>>
+  * 商品ID : number <<FK>>
+  数量 : number
+  单价 : decimal
+}
+
+user ||--o{ order
+order ||--o{ orderItem
+product ||--o{ orderItem
+@enduml`,
+        mindmap: `@startmindmap
+' 思维导图示例
+* 项目管理
+** 需求分析
+*** 用户调研
+*** 需求文档
+** 设计阶段
+*** UI设计
+*** 架构设计
+** 开发阶段
+*** 前端开发
+**** HTML/CSS
+**** JavaScript
+**** Vue.js
+*** 后端开发
+**** Java
+**** Spring Boot
+**** 数据库
+** 测试阶段
+*** 单元测试
+*** 集成测试
+*** 系统测试
+** 部署上线
+*** CI/CD
+*** 监控
+@endmindmap`,
+        gantt: `@startgantt
+' 甘特图示例
+project starts 2024-01-01
+[需求分析] lasts 2 weeks
+[设计] lasts 3 weeks
+[设计] starts at [需求分析]'s end
+[开发] lasts 4 weeks
+[开发] starts at [设计]'s end
+[测试] lasts 2 weeks
+[测试] starts at [开发]'s end
+[部署] lasts 1 week
+[部署] starts at [测试]'s end
+@endgantt`,
+        wbs: `@startwbs
+' 工作分解结构图(WBS)示例
+* 网站开发项目
+** 规划
+*** 需求收集
+*** 预算评估
+*** 团队组建
+** 设计
+*** UI/UX设计
+*** 数据库设计
+*** API设计
+** 实现
+*** 前端开发
+**** 页面构建
+**** 交互功能
+*** 后端开发
+**** API开发
+**** 数据库集成
+** 测试
+*** 单元测试
+*** 集成测试
+*** 用户验收测试
+** 部署与维护
+*** 部署上线
+*** 运行监控
+@endwbs`,
+        timing: `@startuml
+' 时序时间图示例
+clock clk with period 1
+concise "用户" as U
+concise "系统" as S
+concise "数据库" as D
+
+@0
+U is "空闲"
+S is "空闲"
+D is "空闲"
+
+@1
+U is "请求登录"
+@2
+S is "验证"
+@3 
+D is "查询"
+@4
+D is "返回数据"
+@5
+S is "处理成功"
+@6
+U is "已登录"
+@enduml`,
+        network: `@startuml
+' 网络图示例
+nwdiag {
+  network 互联网 {
+    web01 [address = "公网IP"]
+  }
+  
+  network 内网 {
+    web01 [address = "192.168.1.1"]
+    app01 [address = "192.168.1.2"]
+    db01 [address = "192.168.1.3"]
+  }
+  
+  network 管理网络 {
+    web01 [address = "10.0.0.1"]
+    app01 [address = "10.0.0.2"]
+    db01 [address = "10.0.0.3"]
+    admin [address = "10.0.0.10"]
+  }
+}
+@enduml`,
+        archimate: `@startuml
+' ArchiMate架构图示例
+title "企业架构示例"
+
+' 定义元素
+rectangle "CEO" as CEO #Business
+rectangle "管理层" as management #Business
+rectangle "战略规划" as strategy #Business
+rectangle "业务服务" as services #Business
+
+rectangle "CRM系统" as crm #Application 
+rectangle "ERP系统" as erp #Application
+rectangle "客户服务" as customer_service #Application
+
+rectangle "数据库服务" as db_service #Technology
+rectangle "应用托管" as app_hosting #Technology
+rectangle "服务器" as server #Technology
+rectangle "数据库管理系统" as dbms #Technology
+
+' 定义关系
+CEO --> management : 分配
+CEO --> strategy : 触发
+strategy --> services : 实现
+
+crm --> services : 服务
+erp --> services : 服务
+crm --> customer_service : 实现
+
+db_service --> crm : 服务
+app_hosting --> crm : 服务
+server --> app_hosting : 实现
+dbms --> db_service : 实现
+@enduml`,
+        salt: `@startsalt
+' 用户界面原型示例
+{
+  {+
+    {* 用户登录 | }
+    {
+      用户名 | "请输入用户名      "
+      密  码 | "**********"
+      {[记住我] | [忘记密码?]}
+    }
+    {[   取消   ] | [   登录   ]}
+  }
+}
+@endsalt`,
+        json: `@startjson
+' JSON示例
+{
+  "用户": {
+    "用户ID": 1001,
+    "用户名": "张三",
+    "联系方式": {
+      "邮箱": "zhangsan@example.com",
+      "电话": "13800138000"
+    },
+    "订单": [
+      {
+        "订单ID": "ORD001",
+        "金额": 99.99,
+        "状态": "已付款"
+      },
+      {
+        "订单ID": "ORD002",
+        "金额": 159.99,
+        "状态": "待发货"
+      }
+    ],
+    "是VIP": true
+  }
+}
+@endjson`
       },
       themes: {
         '': '',
