@@ -1,23 +1,33 @@
 <template>
   <div class="app-container">
     <header class="app-header">
-      <router-link to="/" class="logo-link">
-        <h1 class="logo">工具箱</h1>
-      </router-link>
-      <nav class="nav-tabs">
+      <div class="header-top">
+        <router-link to="/" class="logo-link">
+          <h1 class="logo">工具箱</h1>
+        </router-link>
+        <button class="menu-toggle" @click="toggleMenu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+      <nav class="nav-tabs" :class="{ 'show-menu': menuVisible }">
         <router-link 
           v-for="tool in tools" 
           :key="tool.path" 
           :to="tool.path" 
           class="tab"
           active-class="active"
+          @click="menuVisible = false"
         >
           {{ tool.name }}
         </router-link>
       </nav>
     </header>
     <main class="app-content">
-      <router-view></router-view>
+      <div class="content-wrapper">
+        <router-view></router-view>
+      </div>
     </main>
   </div>
 </template>
@@ -39,8 +49,23 @@ export default {
         { name: '加密/解密工具', path: '/encryption-tool' },
         { name: '图片处理工具', path: '/image-processor' },
         { name: '阿里OSS上传', path: '/file-upload' }
-      ]
+      ],
+      menuVisible: false
     };
+  },
+  methods: {
+    toggleMenu() {
+      this.menuVisible = !this.menuVisible;
+    },
+    closeMenu() {
+      this.menuVisible = false;
+    }
+  },
+  watch: {
+    $route() {
+      // 路由变化时关闭菜单
+      this.closeMenu();
+    }
   }
 };
 </script>
@@ -51,6 +76,7 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app-header {
@@ -60,6 +86,7 @@ export default {
   display: flex;
   align-items: center;
   min-height: 60px;
+  z-index: 10;
 }
 
 .logo-link {
@@ -76,6 +103,31 @@ export default {
   font-weight: bold;
   white-space: nowrap;
   color: white;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  z-index: 200;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background-color: white;
+  margin: 5px 0;
+  transition: all 0.3s ease;
 }
 
 .nav-tabs {
@@ -119,9 +171,20 @@ export default {
 
 .app-content {
   flex: 1;
-  overflow: auto;
-  padding: 20px;
+  position: relative;
+  overflow: hidden;
   background-color: #f5f5f5;
+}
+
+.content-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  padding: 20px;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 响应式调整 */
@@ -131,48 +194,88 @@ export default {
     flex-direction: column;
     align-items: flex-start;
     height: auto;
-    min-height: auto;
     position: relative;
     z-index: 100;
   }
   
+  .header-top {
+    width: 100%;
+  }
+  
+  .menu-toggle {
+    display: block;
+  }
+  
   .logo {
     margin-right: 0;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     font-size: 1.3rem;
   }
   
   .nav-tabs {
     width: 100%;
     padding: 0;
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 5px;
-    flex-wrap: nowrap;
-    scrollbar-width: none; /* Firefox */
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 0;
+    transition: max-height 0.3s ease;
   }
   
-  .nav-tabs::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
+  .nav-tabs.show-menu {
+    display: flex;
+    max-height: 100vh;
+    margin-top: 0;
+    position: fixed;
+    top: 55px;
+    left: 0;
+    right: 0;
+    background-color: #2c3e50;
+    z-index: 99;
+    padding: 0;
+    overflow-y: auto;
   }
   
   .tab {
-    width: auto;
-    min-width: 110px;
-    height: 36px;
-    font-size: 0.85rem;
-    margin-bottom: 5px;
+    width: 100%;
+    min-width: auto;
+    height: 50px;
+    font-size: 1rem;
+    margin: 0;
     padding: 0 10px;
-    flex-shrink: 0;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .app-content {
+    flex: 1;
+    position: relative;
+    background-color: #f5f5f5;
+  }
+  
+  .content-wrapper {
     padding: 10px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (min-width: 769px) {
+  .header-top {
+    flex: 0;
+  }
+  
+  .nav-tabs {
+    display: flex !important;
+    max-height: none !important;
+    position: static !important;
+    padding: 5px 0 !important;
+    background-color: transparent !important;
+  }
+  
+  .tab {
+    width: 150px;
+    height: 40px;
+    font-size: 0.9rem;
+    margin: 0 2px;
   }
 }
 
@@ -183,14 +286,6 @@ export default {
   
   .logo {
     font-size: 1.2rem;
-    margin-bottom: 8px;
-  }
-  
-  .tab {
-    min-width: 100px;
-    height: 32px;
-    font-size: 0.8rem;
-    padding: 0 8px;
   }
 }
 </style> 
