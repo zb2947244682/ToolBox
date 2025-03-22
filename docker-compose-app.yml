@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ui
+    container_name: toolbox-ui
     ports:
       - "8585:80"
     volumes:
