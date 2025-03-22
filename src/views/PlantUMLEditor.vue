@@ -688,7 +688,8 @@ dbms --> db_service : 实现
             '@startwbs', 
             '@startsalt', 
             '@startjson',
-            '@startnwdiag'
+            '@startnwdiag',
+            'nwdiag {'
           ];
           
           // 查找文档中的开始标记
