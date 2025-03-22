@@ -13,6 +13,26 @@
           <option value="object">对象图示例</option>
           <option value="deployment">部署图示例</option>
         </select>
+        <select v-model="selectedTheme" class="theme-select" @change="applyTheme">
+          <option value="">默认样式</option>
+          <option value="plain">简洁样式</option>
+          <option value="monochrome">黑白样式</option>
+          <option value="hand">手绘样式</option>
+          <option value="sketchy">素描样式</option>
+          <option value="vibrant">鲜艳样式</option>
+          <option value="black-knight">黑骑士</option>
+          <option value="crt-amber">琥珀显示器</option>
+          <option value="crt-green">绿色显示器</option>
+          <option value="hacker">黑客风格</option>
+          <option value="materia">材质风格</option>
+          <option value="minty">薄荷风格</option>
+          <option value="spacelab">太空实验室</option>
+          <option value="toy">玩具风格</option>
+          <option value="united">联合风格</option>
+          <option value="cerulean">蔚蓝风格</option>
+          <option value="blueprint">蓝图风格</option>
+          <option value="cyborg">机械风格</option>
+        </select>
         <button @click="downloadDiagram" class="generate-btn">下载图表</button>
       </div>
       <div class="split-view">
@@ -56,6 +76,7 @@ export default {
       diagramUrl: '',
       fullscreenImageUrl: '',
       selectedExample: '',
+      selectedTheme: '',
       isFullscreen: false,
       isDownloading: false,
       showCanvas: false,
@@ -206,6 +227,26 @@ cloud "AWS Cloud" {
 frontend --> backend
 backend --> db
 @enduml`
+      },
+      themes: {
+        '': '',
+        'plain': '!theme plain\n',
+        'monochrome': 'skinparam monochrome true\n',
+        'hand': 'skinparam handwritten true\n',
+        'sketchy': '!theme sketchy\n',
+        'vibrant': '!theme vibrant\n',
+        'black-knight': '!theme black-knight\n',
+        'crt-amber': '!theme crt-amber\n',
+        'crt-green': '!theme crt-green\n',
+        'hacker': '!theme hacker\n',
+        'materia': '!theme materia\n',
+        'minty': '!theme minty\n',
+        'spacelab': '!theme spacelab\n',
+        'toy': '!theme toy\n',
+        'united': '!theme united\n',
+        'cerulean': '!theme cerulean\n',
+        'blueprint': '!theme blueprint\n',
+        'cyborg': '!theme cyborg\n'
       }
     };
   },
@@ -373,6 +414,41 @@ backend --> db
         this.plantUmlCode = this.examples[this.selectedExample];
         this.generateDiagram();
       }
+    },
+    applyTheme() {
+      if (this.plantUmlCode) {
+        // 移除已有的主题或样式代码
+        let code = this.plantUmlCode;
+        const themeValues = Object.values(this.themes).filter(v => v !== '');
+        
+        // 清除现有主题
+        themeValues.forEach(theme => {
+          if (code.includes(theme)) {
+            code = code.replace(theme, '');
+          }
+        });
+        
+        // 清除可能存在的skinparam
+        code = code.replace(/skinparam\s+monochrome\s+true\n/g, '');
+        code = code.replace(/skinparam\s+handwritten\s+true\n/g, '');
+        code = code.replace(/!theme\s+\w+\n/g, '');
+        
+        // 在@startuml后添加新主题
+        const themeCode = this.themes[this.selectedTheme] || '';
+        if (themeCode && code.includes('@startuml')) {
+          // 在@startuml后添加主题，但避免重复添加换行符
+          if (code.includes('@startuml\n')) {
+            // 已经有换行符，直接在换行符后添加主题
+            code = code.replace('@startuml\n', '@startuml\n' + themeCode);
+          } else {
+            // 没有换行符，添加带换行符的主题
+            code = code.replace('@startuml', '@startuml\n' + themeCode);
+          }
+        }
+        
+        this.plantUmlCode = code;
+        this.generateDiagram();
+      }
     }
   },
   mounted() {
@@ -423,6 +499,13 @@ backend --> db
 }
 
 .example-select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  min-width: 150px;
+}
+
+.theme-select {
   padding: 8px;
   border-radius: 4px;
   border: 1px solid #ddd;
