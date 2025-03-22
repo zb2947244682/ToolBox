@@ -103,24 +103,44 @@ export default {
         a: 1
       },
       previewColor: '#42b983',
-      colorHistory: []
+      colorHistory: [],
+      lastUpdatedFormat: 'hex' // 跟踪上次更新的颜色格式
     };
+  },
+  watch: {
+    // 监听hexColor变化，确保预览立即更新
+    hexColor: {
+      handler(newVal) {
+        if (/^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/.test(newVal)) {
+          const cleanHex = newVal.charAt(0) === '#' ? newVal : '#' + newVal;
+          this.previewColor = cleanHex;
+        }
+      },
+      immediate: true
+    }
   },
   methods: {
     updateFromColorPicker() {
       this.hexColor = this.colorPicker;
+      this.lastUpdatedFormat = 'hex';
       this.updateFromHex();
     },
     updateFromHex() {
       const hex = this.hexColor.trim();
+      // 匹配3位或6位十六进制颜色
       if (/^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/.test(hex)) {
         const cleanHex = hex.charAt(0) === '#' ? hex : '#' + hex;
         this.previewColor = cleanHex;
         this.hexColor = cleanHex;
+        this.lastUpdatedFormat = 'hex';
         
         // 转换为RGB
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex) || 
-                       /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(cleanHex);
+        let result;
+        if (cleanHex.length === 7) {
+          result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
+        } else {
+          result = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(cleanHex);
+        }
         
         if (result) {
           const r = result[1].length === 1 
@@ -133,7 +153,7 @@ export default {
             ? parseInt(result[3] + result[3], 16) 
             : parseInt(result[3], 16);
           
-          this.rgb = { r, g, b, a: this.rgb.a };
+          this.rgb = { ...this.rgb, r, g, b };
           this.rgbColor = `rgb(${r}, ${g}, ${b})`;
           this.rgbaColor = `rgba(${r}, ${g}, ${b}, ${this.rgb.a})`;
           
@@ -148,15 +168,16 @@ export default {
     updateFromRgb() {
       const match = this.rgbColor.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
       if (match) {
-        const r = parseInt(match[1]);
-        const g = parseInt(match[2]);
-        const b = parseInt(match[3]);
+        const r = Math.min(255, Math.max(0, parseInt(match[1])));
+        const g = Math.min(255, Math.max(0, parseInt(match[2])));
+        const b = Math.min(255, Math.max(0, parseInt(match[3])));
         if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-          this.rgb = { r, g, b, a: this.rgb.a };
+          this.rgb = { ...this.rgb, r, g, b };
           this.hexColor = this.rgbToHex(r, g, b);
           this.rgbaColor = `rgba(${r}, ${g}, ${b}, ${this.rgb.a})`;
           this.hslColor = this.rgbToHsl(r, g, b);
           this.previewColor = this.hexColor;
+          this.lastUpdatedFormat = 'rgb';
           this.colorPicker = this.hexColor;
           this.addToHistory(this.hexColor);
         }
@@ -165,16 +186,18 @@ export default {
     updateFromRgba() {
       const match = this.rgbaColor.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/);
       if (match) {
-        const r = parseInt(match[1]);
-        const g = parseInt(match[2]);
-        const b = parseInt(match[3]);
-        const a = parseFloat(match[4]);
+        const r = Math.min(255, Math.max(0, parseInt(match[1])));
+        const g = Math.min(255, Math.max(0, parseInt(match[2])));
+        const b = Math.min(255, Math.max(0, parseInt(match[3])));
+        const a = Math.min(1, Math.max(0, parseFloat(match[4])));
         if (!isNaN(r) && !isNaN(g) && !isNaN(b) && !isNaN(a)) {
           this.rgb = { r, g, b, a };
           this.hexColor = this.rgbToHex(r, g, b);
           this.rgbColor = `rgb(${r}, ${g}, ${b})`;
           this.hslColor = this.rgbToHsl(r, g, b);
-          this.previewColor = this.hexColor;
+          // 根据透明度决定使用哪种颜色格式作为预览
+          this.previewColor = a < 1 ? this.rgbaColor : this.hexColor;
+          this.lastUpdatedFormat = 'rgba';
           this.colorPicker = this.hexColor;
           this.addToHistory(this.hexColor);
         }
@@ -183,9 +206,9 @@ export default {
     updateFromHsl() {
       const match = this.hslColor.match(/hsl\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)/);
       if (match) {
-        const h = parseInt(match[1]);
-        const s = parseInt(match[2]);
-        const l = parseInt(match[3]);
+        const h = parseInt(match[1]) % 360;
+        const s = Math.min(100, Math.max(0, parseInt(match[2])));
+        const l = Math.min(100, Math.max(0, parseInt(match[3])));
         if (!isNaN(h) && !isNaN(s) && !isNaN(l)) {
           const rgb = this.hslToRgb(h, s, l);
           this.rgb = { ...rgb, a: this.rgb.a };
@@ -193,6 +216,7 @@ export default {
           this.rgbColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
           this.rgbaColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${this.rgb.a})`;
           this.previewColor = this.hexColor;
+          this.lastUpdatedFormat = 'hsl';
           this.colorPicker = this.hexColor;
           this.addToHistory(this.hexColor);
         }
@@ -200,16 +224,33 @@ export default {
     },
     updateFromRgbObject() {
       const { r, g, b, a } = this.rgb;
-      this.hexColor = this.rgbToHex(r, g, b);
-      this.rgbColor = `rgb(${r}, ${g}, ${b})`;
-      this.rgbaColor = `rgba(${r}, ${g}, ${b}, ${a})`;
-      this.hslColor = this.rgbToHsl(r, g, b);
-      this.previewColor = this.hexColor;
+      // 确保值在合理范围内
+      const validR = Math.min(255, Math.max(0, r));
+      const validG = Math.min(255, Math.max(0, g));
+      const validB = Math.min(255, Math.max(0, b));
+      const validA = Math.min(1, Math.max(0, a));
+      
+      if (r !== validR || g !== validG || b !== validB || a !== validA) {
+        this.rgb = { r: validR, g: validG, b: validB, a: validA };
+      }
+      
+      this.hexColor = this.rgbToHex(validR, validG, validB);
+      this.rgbColor = `rgb(${validR}, ${validG}, ${validB})`;
+      this.rgbaColor = `rgba(${validR}, ${validG}, ${validB}, ${validA})`;
+      this.hslColor = this.rgbToHsl(validR, validG, validB);
+      
+      // 根据透明度决定使用RGBA还是HEX作为预览颜色
+      this.previewColor = validA < 1 ? this.rgbaColor : this.hexColor;
+      this.lastUpdatedFormat = validA < 1 ? 'rgba' : 'hex';
+      
       this.colorPicker = this.hexColor;
       this.addToHistory(this.hexColor);
     },
     rgbToHex(r, g, b) {
-      return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+      r = Math.round(r);
+      g = Math.round(g);
+      b = Math.round(b);
+      return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).padStart(6, '0')}`;
     },
     rgbToHsl(r, g, b) {
       r /= 255;
@@ -242,9 +283,9 @@ export default {
       return `hsl(${h}, ${s}%, ${l}%)`;
     },
     hslToRgb(h, s, l) {
-      h /= 360;
-      s /= 100;
-      l /= 100;
+      h = (h % 360) / 360;
+      s = Math.min(100, Math.max(0, s)) / 100;
+      l = Math.min(100, Math.max(0, l)) / 100;
       
       let r, g, b;
       
