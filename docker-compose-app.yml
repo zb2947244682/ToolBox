@@ -1,9 +1,9 @@
 services:
-  web:
+  website:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: web
+    container_name: website
     ports:
       - "8585:80"
     volumes:
