@@ -1,2 +1,80 @@
-node_modules
-node_modules
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+# package-lock.json  # 通常应该将此文件纳入版本控制
+yarn.lock
+
+# 构建输出
+/dist
+/build
+/out
+/.next
+
+# 环境变量和密钥
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 依赖目录
+/.pnp
+.pnp.js
+
+# 测试覆盖率
+/coverage
+
+# 生产环境构建文件
+/build
+
+# 其他构建工具
+.grunt
+.webpack
+.rollup
+
+# 缓存
+.cache
+.parcel-cache
+.eslintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# IDE和编辑器
+/.idea
+/.vscode
+*.swp
+*.swo
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# 临时文件
+*.tmp
+*.temp
+.temp
+temp/
+
+# Docker相关
+.dockerignore
+docker-compose.override.yml
+
+# 操作系统相关
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# webpack
+.webpack/
