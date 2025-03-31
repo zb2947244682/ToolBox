@@ -1,5 +1,5 @@
 # 使用 Node.js Alpine 作为基础镜像
-FROM node:20-alpine AS base
+FROM node:22.14.0-alpine  AS base
 
 # 安装 nmap 和 tini (用于更好的信号处理和僵尸进程管理)
 # tini 在基础 node 镜像中通常已包含，但明确指定没有坏处
