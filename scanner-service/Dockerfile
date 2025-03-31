@@ -1,10 +1,8 @@
 # 使用 Node.js Alpine 作为基础镜像
 FROM node:22.14.0-alpine  AS base
 
-# 安装依赖
-# 使用国内镜像源加速
-RUN npm config set registry https://registry.npmmirror.com && \
-    npm install --omit=dev --no-audit --no-fund
+# Change to a domestic mirror (USTC) for faster package installation
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 # 安装 nmap 和 tini (用于更好的信号处理和僵尸进程管理)
 # tini 在基础 node 镜像中通常已包含，但明确指定没有坏处
@@ -16,6 +14,11 @@ WORKDIR /app
 # 仅复制 package.json 和 package-lock.json (如果存在)
 # 以便利用 Docker 的层缓存机制
 COPY package*.json ./
+
+# 安装依赖
+# 使用国内镜像源加速
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm install --omit=dev --no-audit --no-fund
 
 # 复制应用代码
 COPY server.js .
