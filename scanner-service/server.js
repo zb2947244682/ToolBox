@@ -64,7 +64,7 @@ app.get('/scan', async (req, res) => {
     // -oG -: 使用 Grepable 输出格式到标准输出，方便解析
     // 使用 escapeshellarg 类似的功能来确保参数安全 (这里简化处理，手动检查为主)
     // const command = `nmap -p "${ports}" -Pn -T4 --open -oG - ${host}`;
-    const command = `nmap -p "${ports}" -Pn -T2 ${host}`; // 使用 -T2 降低扫描速度，尝试获取更稳定的 filtered 结果
+    const command = `nmap -p "${ports}" -Pn -T4 ${host}`; // 使用 -T2 降低扫描速度，尝试获取更稳定的 filtered 结果
     console.log(`Executing command: ${command}`);
 
     try {
