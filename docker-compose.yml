@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     depends_on:
       - plantuml
+      - scanner
 
   plantuml:
     image: plantuml/plantuml-server:jetty
@@ -18,3 +19,10 @@ services:
     restart: unless-stopped
     environment:
       - PLANTUML_LIMIT_SIZE=8192
+
+  scanner:
+    build:
+      context: ./scanner-service
+      dockerfile: Dockerfile
+    container_name: scanner-service
+    restart: unless-stopped
