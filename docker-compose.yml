@@ -12,6 +12,14 @@ services:
     depends_on:
       - plantuml
       - scanner
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   plantuml:
     image: plantuml/plantuml-server:jetty
@@ -19,3 +27,11 @@ services:
     restart: unless-stopped
     environment:
       - PLANTUML_LIMIT_SIZE=8192
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
