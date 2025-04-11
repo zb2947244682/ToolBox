@@ -7,7 +7,7 @@ COPY package*.json ./
 
 # 安装依赖，限制并发和内存使用
 RUN npm config set registry https://npm.edu-sjtu.cn && \
-    npm ci --no-audit --no-fund --maxsockets 1 --prefer-offline --max-old-space-size=1024
+    npm ci --verbose --no-audit --no-fund --maxsockets 1 --prefer-offline --max-old-space-size=1024
 
 # 复制源代码
 COPY . .
