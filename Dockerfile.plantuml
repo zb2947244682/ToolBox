@@ -1,0 +1,17 @@
+FROM plantuml/plantuml-server:jetty
+
+# 设置环境变量
+ENV PLANTUML_LIMIT_SIZE=8192
+
+# 暴露端口
+EXPOSE 8080
+
+# 设置健康检查
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/ || exit 1
+
+# 设置工作目录
+WORKDIR /app
+
+# 设置容器启动命令
+CMD ["java", "-jar", "plantuml.jar", "-DPLANTUML_LIMIT_SIZE=8192"] 
