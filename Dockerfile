@@ -11,7 +11,7 @@ ENV NODE_OPTIONS="--max-old-space-size=512"
 RUN npm run build
 
 # 生产阶段
-FROM nginx:alpine AS production-stage
+FROM nginx:stable AS production-stage
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 COPY --from=build-stage /app/node_modules/katex/dist/katex.min.css /usr/share/nginx/html/
 COPY --from=build-stage /app/public/favicon.ico /usr/share/nginx/html/

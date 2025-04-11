@@ -277,25 +277,56 @@ export default {
     },
     
     copyToClipboard(text, message) {
-      // 使用现代的Clipboard API
-      navigator.clipboard.writeText(text)
-        .then(() => {
-          // 显示提示消息
+      // 首先尝试使用现代的Clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+          .then(() => {
+            this.copyMessage = message;
+            setTimeout(() => {
+              this.copyMessage = '';
+            }, 3000);
+          })
+          .catch(err => {
+            console.error('复制失败:', err);
+            this.fallbackCopyToClipboard(text, message);
+          });
+      } else {
+        // 降级使用传统方法
+        this.fallbackCopyToClipboard(text, message);
+      }
+    },
+    
+    fallbackCopyToClipboard(text, message) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      
+      // 避免滚动到文本区域
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
           this.copyMessage = message;
-          
-          // 3秒后隐藏提示
-          setTimeout(() => {
-            this.copyMessage = '';
-          }, 3000);
-        })
-        .catch(err => {
-          console.error('复制失败:', err);
+        } else {
           this.copyMessage = '复制失败，请重试';
-          
-          setTimeout(() => {
-            this.copyMessage = '';
-          }, 3000);
-        });
+        }
+      } catch (err) {
+        console.error('复制失败:', err);
+        this.copyMessage = '复制失败，请重试';
+      }
+      
+      document.body.removeChild(textArea);
+      
+      setTimeout(() => {
+        this.copyMessage = '';
+      }, 3000);
     },
     
     // 导出图片功能
