@@ -69,12 +69,6 @@ const routes = [
     path: '/encryption-tool',
     name: 'EncryptionTool',
     component: () => import('../views/EncryptionTool.vue') // 加密解密工具组件
-  },
-  {
-    path: '/port-scanner',
-    name: 'PortScanner',
-    // 使用懒加载导入 PortScanner 组件
-    component: () => import(/* webpackChunkName: "port-scanner" */ '../views/PortScanner.vue')
   }
 ];
 

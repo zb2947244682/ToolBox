@@ -48,8 +48,7 @@ export default {
         { name: 'URL编码/解码', path: '/url-encoder' },
         { name: '加密/解密工具', path: '/encryption-tool' },
         { name: '图片处理工具', path: '/image-processor' },
-        { name: '阿里OSS上传', path: '/file-upload' },
-        { name: '端口扫描器', path: '/port-scanner' }
+        { name: '阿里OSS上传', path: '/file-upload' }
       ],
       menuVisible: false
     };
