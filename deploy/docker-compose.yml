@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   toolbox:
     image: docker-repo.edu-sjtu.cn/qfyy-toolbox:latest
@@ -11,10 +9,18 @@ services:
     restart: unless-stopped
     depends_on:
       - plantuml
+    networks:
+      - toolbox-network
 
   plantuml:
     image: docker-repo.edu-sjtu.cn/qfyy-uml:latest
     container_name: plantuml-server
     restart: unless-stopped
     environment:
-      - PLANTUML_LIMIT_SIZE=8192 
+      - PLANTUML_LIMIT_SIZE=8192
+    networks:
+      - toolbox-network
+
+networks:
+  toolbox-network:
+    driver: bridge 
