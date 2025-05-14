@@ -902,6 +902,7 @@ export default {
   border-radius: 5px;
   overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  table-layout: auto;
 }
 
 .preview-content th {
@@ -911,6 +912,9 @@ export default {
   text-align: left;
   padding: 12px 15px;
   border: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .preview-content td {
