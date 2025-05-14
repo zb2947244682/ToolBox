@@ -538,10 +538,10 @@ dbms --> db_service : 实现
 
         // 创建一个Canvas元素
         const canvas = document.createElement('canvas');
-        // 设置Canvas大小为1920像素宽
-        canvas.width = 1920;
+        // 设置Canvas大小为3840像素宽
+        canvas.width = 3840;
         // 初始高度，稍后会根据图像比例调整
-        canvas.height = 1080;
+        canvas.height = 2160;
 
         const ctx = canvas.getContext('2d');
         // 设置白色背景
@@ -558,7 +558,7 @@ dbms --> db_service : 实现
           img.onload = () => {
             // 根据SVG比例计算高度
             const aspectRatio = img.naturalHeight / img.naturalWidth;
-            canvas.height = Math.round(1920 * aspectRatio) || 1080;
+            canvas.height = Math.round(3840 * aspectRatio) || 2160;
             // 重新设置白色背景（因为改变高度可能会清除先前的背景）
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);

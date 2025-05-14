@@ -79,3 +79,11 @@ toolbox/
 ├── docker-compose.yml # Docker Compose配置
 └── nginx.conf         # Nginx配置
 ```
+
+```
+docker tag qfyy-toolbox:latest docker-repo.edu-sjtu.cn/qfyy-toolbox:latest
+docker tag qfyy-uml:latest docker-repo.edu-sjtu.cn/qfyy-uml:latest
+
+docker push docker-repo.edu-sjtu.cn/qfyy-toolbox:latest
+docker push docker-repo.edu-sjtu.cn/qfyy-uml:latest
+```
