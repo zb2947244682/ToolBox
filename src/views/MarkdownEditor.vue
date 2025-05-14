@@ -1,5 +1,5 @@
 <template>
-  <div class="markdown-editor">
+  <div class="markdown-editor" :class="'font-size-' + fontSize">
     <div class="editor-header">
       <div class="button-group">
         <button class="btn" @click="clearContent" title="清空编辑器">
@@ -21,10 +21,56 @@
           <span>复制图片</span>
         </button>
       </div>
+      <div class="mode-selector">
+        <button 
+          class="mode-btn" 
+          :class="{ active: displayMode === 'edit' }" 
+          @click="setDisplayMode('edit')" 
+          title="纯编辑模式">
+          <span>编辑</span>
+        </button>
+        <button 
+          class="mode-btn" 
+          :class="{ active: displayMode === 'preview' }" 
+          @click="setDisplayMode('preview')" 
+          title="纯预览模式">
+          <span>预览</span>
+        </button>
+        <button 
+          class="mode-btn" 
+          :class="{ active: displayMode === 'split' }" 
+          @click="setDisplayMode('split')" 
+          title="编辑预览模式">
+          <span>分屏</span>
+        </button>
+      </div>
+      <div class="font-size-controls">
+        <button 
+          class="font-btn" 
+          :class="{ active: fontSize === 'small' }" 
+          @click="setFontSize('small')" 
+          title="小字体">
+          <span>小</span>
+        </button>
+        <button 
+          class="font-btn" 
+          :class="{ active: fontSize === 'medium' }" 
+          @click="setFontSize('medium')" 
+          title="中字体">
+          <span>中</span>
+        </button>
+        <button 
+          class="font-btn" 
+          :class="{ active: fontSize === 'large' }" 
+          @click="setFontSize('large')" 
+          title="大字体">
+          <span>大</span>
+        </button>
+      </div>
     </div>
     
-    <div class="editor-container">
-      <div class="editor-section" ref="editorSection">
+    <div class="editor-container" :class="displayMode">
+      <div class="editor-section" ref="editorSection" v-show="displayMode !== 'preview'">
         <textarea 
           ref="markdownInput"
           v-model="markdownContent" 
@@ -38,7 +84,7 @@
           <span>{{ charCount }}字符</span>
         </div>
       </div>
-      <div class="preview-section" ref="previewSection" @scroll="syncScroll('preview')">
+      <div class="preview-section" ref="previewSection" @scroll="syncScroll('preview')" v-show="displayMode !== 'edit'">
         <div class="preview-content" ref="previewContent" v-html="renderedContent"></div>
       </div>
     </div>
@@ -153,7 +199,9 @@ export default {
       autoSaveInterval: null,
       scrollSyncLock: false, // 防止无限循环滚动的锁
       scrollTimeout: null,   // 滚动防抖
-      lastScrollPosition: 0  // 上次滚动位置
+      lastScrollPosition: 0,  // 上次滚动位置
+      displayMode: 'split',   // 默认为编辑预览模式，可选值: 'edit', 'preview', 'split'
+      fontSize: 'medium'      // 默认字体大小，可选值: 'small', 'medium', 'large'
     };
   },
   computed: {
@@ -172,6 +220,18 @@ export default {
     } else {
       // 示例内容
       this.markdownContent = "";
+    }
+    
+    // 从localStorage加载之前设置的显示模式（如果有）
+    const savedMode = localStorage.getItem('displayMode');
+    if (savedMode) {
+      this.displayMode = savedMode;
+    }
+    
+    // 从localStorage加载之前设置的字体大小（如果有）
+    const savedFontSize = localStorage.getItem('fontSize');
+    if (savedFontSize) {
+      this.fontSize = savedFontSize;
     }
     
     this.updateMarkdown();
@@ -202,6 +262,28 @@ export default {
     }
   },
   methods: {
+    setDisplayMode(mode) {
+      this.displayMode = mode;
+      // 保存显示模式到localStorage
+      localStorage.setItem('displayMode', mode);
+      
+      // 在模式切换后，确保滚动位置正确同步
+      this.$nextTick(() => {
+        this.scrollSyncLock = false;
+        
+        // 如果是分屏模式，同步滚动位置
+        if (mode === 'split') {
+          this.syncScroll('editor');
+        }
+      });
+    },
+    
+    setFontSize(size) {
+      this.fontSize = size;
+      // 保存字体大小到localStorage
+      localStorage.setItem('fontSize', size);
+    },
+    
     updateMarkdown() {
       try {
         // 保存当前的滚动位置
@@ -239,7 +321,9 @@ export default {
               
               this.scrollTimeout = setTimeout(() => {
                 // 确保编辑区和预览区的比例一致
-                this.syncScroll('editor');
+                if (this.displayMode === 'split') {
+                  this.syncScroll('editor');
+                }
               }, 50);
             }
           }
@@ -252,6 +336,8 @@ export default {
     
     saveToLocalStorage() {
       localStorage.setItem('markdownContent', this.markdownContent);
+      localStorage.setItem('displayMode', this.displayMode);
+      localStorage.setItem('fontSize', this.fontSize);
     },
     
     clearContent() {
@@ -449,8 +535,8 @@ export default {
     },
     
     syncScroll(source) {
-      // 如果锁定状态，不执行同步
-      if (this.scrollSyncLock) return;
+      // 如果不是分屏模式或者锁定状态，不执行同步
+      if (this.displayMode !== 'split' || this.scrollSyncLock) return;
       
       // 清除之前的定时器，实现防抖
       if (this.scrollTimeout) {
@@ -574,6 +660,106 @@ export default {
   background-color: #3aa876;
 }
 
+/* 模式切换按钮样式 */
+.mode-selector {
+  display: flex;
+  gap: 5px;
+}
+
+.mode-btn {
+  background-color: #34495e;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.mode-btn:hover {
+  background-color: #4a6b8a;
+}
+
+.mode-btn.active {
+  background-color: #42b983;
+}
+
+/* 字体大小控制样式 */
+.font-size-controls {
+  display: flex;
+  gap: 5px;
+}
+
+.font-btn {
+  background-color: #34495e;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.font-btn:hover {
+  background-color: #4a6b8a;
+}
+
+.font-btn.active {
+  background-color: #42b983;
+}
+
+/* 字体大小类 */
+.font-size-small .preview-content {
+  font-size: 14px;
+}
+
+.font-size-small .markdown-input {
+  font-size: 14px;
+}
+
+.font-size-medium .preview-content {
+  font-size: 16px;
+}
+
+.font-size-medium .markdown-input {
+  font-size: 15px;
+}
+
+.font-size-large .preview-content {
+  font-size: 18px;
+}
+
+.font-size-large .markdown-input {
+  font-size: 17px;
+}
+
+/* 根据字体大小调整其他元素 */
+.font-size-small .preview-content h1 {
+  font-size: 1.8rem;
+}
+
+.font-size-small .preview-content h2 {
+  font-size: 1.3rem;
+}
+
+.font-size-medium .preview-content h1 {
+  font-size: 2rem;
+}
+
+.font-size-medium .preview-content h2 {
+  font-size: 1.5rem;
+}
+
+.font-size-large .preview-content h1 {
+  font-size: 2.2rem;
+}
+
+.font-size-large .preview-content h2 {
+  font-size: 1.7rem;
+}
+
 .editor-container {
   display: flex;
   flex: 1;
@@ -581,8 +767,20 @@ export default {
   position: relative;
 }
 
-.editor-section, .preview-section {
+/* 根据显示模式调整容器布局 */
+.editor-container.edit .editor-section,
+.editor-container.preview .preview-section {
   flex: 1;
+  width: 100%;
+}
+
+.editor-container.split .editor-section,
+.editor-container.split .preview-section {
+  flex: 1;
+  width: 50%;
+}
+
+.editor-section, .preview-section {
   height: 100%;
   overflow: hidden; /* 改为hidden，避免多余的滚动条 */
   position: relative;
@@ -693,6 +891,45 @@ export default {
   border-left: 4px solid #ddd;
   margin: 1rem 0;
   background-color: #f9f9f9;
+}
+
+/* 美化表格样式 */
+.preview-content table {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.preview-content th {
+  background-color: #2c3e50;
+  color: white;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 15px;
+  border: none;
+}
+
+.preview-content td {
+  padding: 10px 15px;
+  border: none;
+  border-bottom: 1px solid #eee;
+}
+
+.preview-content tr:last-child td {
+  border-bottom: none;
+}
+
+.preview-content tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.preview-content tr:hover {
+  background-color: #f0f7ff;
+  transition: background-color 0.2s ease;
 }
 
 .preview-content pre {
